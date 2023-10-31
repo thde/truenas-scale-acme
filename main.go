@@ -19,12 +19,13 @@ var (
 )
 
 func main() {
-	encoder := zap.NewProductionEncoderConfig()
-	encoder.EncodeTime = zapcore.RFC3339TimeEncoder
-	encoder.EncodeLevel = zapcore.CapitalColorLevelEncoder
+	enc := zap.NewProductionEncoderConfig()
+	enc.EncodeTime = zapcore.RFC3339TimeEncoder
+	enc.EncodeLevel = zapcore.CapitalColorLevelEncoder
+	enc.ConsoleSeparator = " "
 
 	logger := zap.New(zapcore.NewCore(
-		zapcore.NewConsoleEncoder(encoder),
+		zapcore.NewConsoleEncoder(enc),
 		os.Stderr,
 		zap.InfoLevel,
 	))
