@@ -68,12 +68,20 @@ func (b *BuildInfo) String() string {
 }
 
 type cmd struct {
-	*zap.Logger
+	CertLogger  *zap.Logger
+	ScaleLogger *zap.Logger
+	CLILogger   *zap.Logger
+
 	*BuildInfo
 }
 
 func Run(ctx context.Context, logger *zap.Logger, buildInfo *BuildInfo) error {
-	return cmd{Logger: logger, BuildInfo: buildInfo}.Run(ctx)
+	return cmd{
+		CertLogger:  logger.Named("certificate"),
+		ScaleLogger: logger.Named("scale"),
+		CLILogger:   logger.Named("cli"),
+		BuildInfo:   buildInfo,
+	}.Run(ctx)
 }
 
 func (c cmd) Run(ctx context.Context) error {
@@ -116,15 +124,62 @@ func (c cmd) Run(ctx context.Context) error {
 		scale.WithHTTPClient(httpClient),
 	)
 
-	c.Info("ensure valid certificate is present")
+	c.CertLogger.Info("ensure valid certificate is present")
+	currentCert, err := c.ensureACMECertificate(ctx, config.Domain, config.ACME)
+	if err != nil {
+		return err
+	}
 
-	certmagic.Default.Logger = c.With(zap.String("module", "certmagic"))
-	certmagic.DefaultACME.Logger = certmagic.Default.Logger
-	certmagic.DefaultACME.Agreed = config.ACME.TOSAgreed
-	certmagic.DefaultACME.Email = config.ACME.Email
+	activeCert, err := c.ensureUICertificate(ctx, client, currentCert)
+	if err != nil {
+		return err
+	}
+
+	return c.removeExpiredCerts(ctx, client, config.Domain, activeCert)
+}
+
+func (c cmd) ensureUICertificate(ctx context.Context, client *scale.Client, currentCert certmagic.Certificate) (*scale.Certificate, error) {
+	settings, err := client.SystemGeneral(ctx)
+	if err != nil {
+		return nil, err
+	}
+	activeCert := &settings.UICertificate
+	activeCertTLS, err := activeCert.TLSCertificate()
+	if err != nil {
+		return nil, err
+	}
+
+	if !activeCertTLS.Leaf.Equal(currentCert.Leaf) {
+		name := fmt.Sprintf("acme-%s", time.Now().Format("20060102-150405"))
+		c.ScaleLogger.Info("importing certificate", zap.String("name", name), zap.Strings("san", currentCert.Leaf.DNSNames))
+		certImport, err := client.CertificateImport(ctx, name, currentCert.Certificate)
+		if err != nil {
+			return activeCert, err
+		}
+
+		err = client.SystemGeneralUpdate(ctx, scale.SystemGeneralUpdateParams{UICertificate: certImport.ID})
+		if err != nil {
+			return activeCert, err
+		}
+		c.ScaleLogger.Info("ui certificate updated")
+
+		activeCert = certImport
+	} else {
+		c.ScaleLogger.Info("ui certificate up to date")
+	}
+
+	return activeCert, nil
+}
+
+func (c cmd) ensureACMECertificate(ctx context.Context, domain string, config ACMEConfig) (certmagic.Certificate, error) {
+	certmagicLogger := c.CertLogger.Named("certmagic")
+	certmagic.Default.Logger = certmagicLogger.WithOptions(zap.IncreaseLevel(zap.WarnLevel))
+	certmagic.DefaultACME.Logger = certmagicLogger.Named("acme")
+	certmagic.DefaultACME.Agreed = config.TOSAgreed
+	certmagic.DefaultACME.Email = config.Email
 	certmagic.DefaultACME.DNS01Solver = &certmagic.DNS01Solver{
-		DNSProvider: &config.ACME.ACMEDNS,
-		Resolvers:   config.ACME.Resolvers,
+		DNSProvider: &config.ACMEDNS,
+		Resolvers:   config.Resolvers,
 	}
 
 	magic := certmagic.NewDefault()
@@ -138,41 +193,36 @@ func (c cmd) Run(ctx context.Context) error {
 		}),
 	}
 
-	err = magic.ManageSync(ctx, []string{config.Domain})
+	err := magic.ManageSync(ctx, []string{domain})
 	if err != nil {
-		return err
+		return certmagic.Certificate{}, err
 	}
-	cert, err := magic.CacheManagedCertificate(ctx, config.Domain)
+	return magic.CacheManagedCertificate(ctx, domain)
+}
+
+func (c cmd) removeExpiredCerts(ctx context.Context, client *scale.Client, domain string, activeCert *scale.Certificate) error {
+	certs, err := client.Certificates(ctx)
 	if err != nil {
 		return err
 	}
 
-	settings, err := client.SystemGeneral(ctx)
-	if err != nil {
-		return err
-	}
-	currentCert, err := settings.UICertificate.TLSCertificate()
-	if err != nil {
-		return err
-	}
+	for _, cert := range certs {
+		if cert.Common != domain {
+			continue
+		}
+		if !cert.Expired {
+			continue
+		}
+		if cert.ID == activeCert.ID {
+			continue
+		}
 
-	if currentCert.Leaf.Equal(cert.Leaf) {
-		c.Info("ui certificate is up to date")
-		return nil
+		c.ScaleLogger.Info("removing expired certificate", zap.Int("id", cert.ID), zap.String("cn", cert.Common), zap.Time("expired", cert.Until.Time))
+		err = client.CertificateDelete(ctx, cert.ID)
+		if err != nil {
+			return fmt.Errorf("error removing certificate %d for %s: %w", cert.ID, cert.Common, err)
+		}
 	}
-
-	name := fmt.Sprintf("acme-%s", time.Now().Format("20060102-150405"))
-	certImport, err := client.CertificateImport(ctx, name, cert.Certificate)
-	if err != nil {
-		return err
-	}
-	c.Info("certificate imported", zap.Int("id", certImport.ID), zap.Strings("san", certImport.SAN))
-
-	err = client.SystemGeneralUpdate(ctx, scale.SystemGeneralUpdateParams{UICertificate: certImport.ID})
-	if err != nil {
-		return err
-	}
-	c.Info("ui certificate updated")
 
 	return nil
 }

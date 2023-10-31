@@ -99,7 +99,7 @@ func (c cmd) loadConfig(path string) (*Config, error) {
 		flags = os.O_RDWR | os.O_CREATE
 	}
 
-	c.Info("reading config", zap.String("path", path))
+	c.CLILogger.Info("reading config", zap.String("path", path))
 	configFile, err := os.OpenFile(path, flags, 0o700)
 	if err != nil {
 		return nil, err
@@ -112,7 +112,7 @@ func (c cmd) loadConfig(path string) (*Config, error) {
 	}
 
 	if s.Size() == 0 && flags != os.O_RDONLY {
-		c.Info("config does not exist, writing example config", zap.String("path", path))
+		c.CLILogger.Info("config does not exist, writing example config", zap.String("path", path))
 		return nil, exampleConfig.Write(configFile)
 	}
 
