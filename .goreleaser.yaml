@@ -17,3 +17,12 @@ archives:
       - goos: windows
         format: zip
 report_sizes: true
+brews:
+  - repository:
+      owner: "{{ .Env.GITHUB_REPOSITORY_OWNER }}"
+      name: "{{ .ProjectName }}"
+    folder: Formula
+    commit_msg_template: "build: update formula to version {{ .Tag }}"
+    homepage: "https://github.com/{{ .Env.GITHUB_REPOSITORY_OWNER }}/{{ .ProjectName }}"
+    description: Optain and manage certificates for TrueNAS Scale.
+    license: MIT
