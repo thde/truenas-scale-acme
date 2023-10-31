@@ -12,7 +12,7 @@ type SystemGeneral struct {
 	ID                   int         `json:"id,omitempty"`
 	Language             string      `json:"language,omitempty"`
 	KDBMap               string      `json:"kbdmap,omitempty"`
-	Birthday             Time        `json:"birthday,omitempty"`
+	Birthday             Date        `json:"birthday,omitempty"`
 	Timezone             string      `json:"timezone,omitempty"`
 	Wizardshown          bool        `json:"wizardshown,omitempty"`
 	CrashReporting       bool        `json:"crash_reporting,omitempty"`

@@ -9,6 +9,7 @@ import (
 	"math/big"
 	"net/http"
 	"strings"
+	"time"
 )
 
 type CertificateCreate string
@@ -20,6 +21,17 @@ type CertificateImport struct {
 	CreateType  CertificateCreate `json:"create_type"`
 	Certificate string            `json:"certificate"`
 	Privatekey  string            `json:"privatekey"`
+}
+
+type Time struct {
+	time.Time
+}
+
+func (t *Time) UnmarshalJSON(data []byte) error {
+	s := strings.Trim(string(data), "\"")
+	pt, err := time.Parse("Mon Jan 2 15:04:05 2006", s)
+	t.Time = pt
+	return err
 }
 
 type Certificate struct {
@@ -57,8 +69,8 @@ type Certificate struct {
 	SubjectNameHash    int64    `json:"subject_name_hash,omitempty"`
 	DigestAlgorithm    string   `json:"digest_algorithm,omitempty"`
 	Lifetime           int      `json:"lifetime,omitempty"`
-	From               string   `json:"from,omitempty"`
-	Until              string   `json:"until,omitempty"`
+	From               Time     `json:"from,omitempty"`
+	Until              Time     `json:"until,omitempty"`
 	Serial             *big.Int `json:"serial,omitempty"`
 	Chain              bool     `json:"chain,omitempty"`
 	Fingerprint        string   `json:"fingerprint,omitempty"`

@@ -2,6 +2,7 @@ package scale
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -25,8 +26,8 @@ type Job struct {
 	Error        string   `json:"error,omitempty"`
 	Exception    string   `json:"exception,omitempty"`
 	State        string   `json:"state,omitempty"`
-	TimeStarted  Time     `json:"time_started,omitempty"`
-	TimeFinished Time     `json:"time_finished,omitempty"`
+	TimeStarted  Date     `json:"time_started,omitempty"`
+	TimeFinished Date     `json:"time_finished,omitempty"`
 }
 
 type Progress struct {
@@ -35,8 +36,21 @@ type Progress struct {
 	Extra       any    `json:"extra,omitempty"`
 }
 
-type Time struct {
-	Date int64 `json:"$date,omitempty"`
+type Timestamp struct {
+	time.Time
+}
+
+func (t *Timestamp) UnmarshalJSON(data []byte) error {
+	var i int64
+	if err := json.Unmarshal(data, &i); err != nil {
+		return err
+	}
+	t.Time = time.Unix(i, 0)
+	return nil
+}
+
+type Date struct {
+	Date Timestamp `json:"$date,omitempty"`
 }
 
 type JobsParams struct {
