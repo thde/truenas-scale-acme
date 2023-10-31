@@ -191,7 +191,6 @@ func (c *Client) CertificateDelete(ctx context.Context, id int) error {
 		return err
 	}
 
-	certificate := Certificate{}
-	_, err = c.doJSON(req, &certificate)
+	_, err = c.doJob(req)
 	return err
 }
