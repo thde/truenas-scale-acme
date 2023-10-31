@@ -8,7 +8,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"github.com/thde/truenas-scale-acme/internal/cmd"
+	"github.com/thde/truenas-scale-acme/internal/cli"
 )
 
 var (
@@ -30,7 +30,7 @@ func main() {
 		zap.InfoLevel,
 	))
 
-	if err := cmd.Run(context.Background(), logger, &cmd.BuildInfo{
+	if err := cli.Run(context.Background(), logger, &cli.BuildInfo{
 		Version:   version,
 		Commit:    commit,
 		Date:      date,
