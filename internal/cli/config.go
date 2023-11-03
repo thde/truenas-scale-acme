@@ -33,7 +33,7 @@ type Config struct {
 	ACME   ACMEConfig  `json:"acme"`
 }
 
-func defaultConfigPath() (string) {
+func defaultConfigPath() string {
 	base, err := os.UserConfigDir()
 	if err != nil {
 		return ""

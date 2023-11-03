@@ -109,7 +109,7 @@ func (c cmd) Run(ctx context.Context) error {
 	httpClient := &http.Client{
 		Timeout: 30 * time.Second,
 		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: config.Scale.SkipVerify},
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: config.Scale.SkipVerify}, //nolint: gosec
 		},
 	}
 

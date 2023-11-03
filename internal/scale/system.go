@@ -32,7 +32,7 @@ type SystemGeneral struct {
 	UsageCollectionIsSet bool        `json:"usage_collection_is_set,omitempty"`
 }
 
-// SystemGeneral returns general system config
+// SystemGeneral returns general system config.
 func (c *Client) SystemGeneral(ctx context.Context) (*SystemGeneral, error) {
 	req, err := c.newRequest(ctx, http.MethodGet, "system/general", nil, nil)
 	if err != nil {
@@ -50,8 +50,8 @@ type SystemGeneralUpdateParams struct {
 	RollbackTimeout int `json:"rollback_timeout,omitempty"`
 }
 
-// SystemGeneralUpdate updates general system config
-func (c *Client) SystemGeneralUpdate(ctx context.Context, params SystemGeneralUpdateParams) (error) {
+// SystemGeneralUpdate updates general system config.
+func (c *Client) SystemGeneralUpdate(ctx context.Context, params SystemGeneralUpdateParams) error {
 	if params.UIRestartDelay == 0 {
 		params.UIRestartDelay = 2
 	}
@@ -69,7 +69,7 @@ func (c *Client) SystemGeneralUpdate(ctx context.Context, params SystemGeneralUp
 		return err
 	}
 
-	time.Sleep(time.Duration(params.UIRestartDelay + 1) * time.Second) // wait for restart delay
+	time.Sleep(time.Duration(params.UIRestartDelay+1) * time.Second) // wait for restart delay
 
 	timeout := time.After(time.Duration(params.RollbackTimeout) * time.Second)
 	ticker := time.NewTicker(500 * time.Millisecond)

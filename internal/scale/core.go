@@ -58,7 +58,7 @@ type JobsParams struct {
 	Limit int `url:"limit,omitempty"`
 }
 
-// CoreGetJobs returns a list of Jobs
+// CoreGetJobs returns a list of Jobs.
 func (c *Client) CoreGetJobs(ctx context.Context, params JobsParams) ([]Job, error) {
 	v, err := query.Values(params)
 	if err != nil {
@@ -75,7 +75,7 @@ func (c *Client) CoreGetJobs(ctx context.Context, params JobsParams) ([]Job, err
 	return jobs, err
 }
 
-// CoreGetJob returns a Job
+// CoreGetJob returns a Job.
 func (c *Client) CoreGetJob(ctx context.Context, id int) (*Job, error) {
 	jobs, err := c.CoreGetJobs(ctx, JobsParams{ID: id, Limit: 1})
 	if err != nil {
@@ -88,7 +88,7 @@ func (c *Client) CoreGetJob(ctx context.Context, id int) (*Job, error) {
 	return &jobs[0], err
 }
 
-// CoreJobWait waits for a job to finish
+// CoreJobWait waits for a job to finish.
 func (c *Client) CoreJobWait(ctx context.Context, id int) (*Job, error) {
 	timeout := time.After(10 * time.Second)
 	ticker := time.NewTicker(500 * time.Millisecond)
@@ -111,7 +111,7 @@ func (c *Client) CoreJobWait(ctx context.Context, id int) (*Job, error) {
 	}
 }
 
-// doJob exectures a request that returns a Job and waits for it to finish
+// doJob exectures a request that returns a Job and waits for it to finish.
 func (c *Client) doJob(req *http.Request) (*Job, error) {
 	resp, err := c.do(req)
 	if err != nil {
