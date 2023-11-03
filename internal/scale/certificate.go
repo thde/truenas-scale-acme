@@ -93,7 +93,7 @@ func (c *Certificate) TLSCertificate() (tls.Certificate, error) {
 	return cert, err
 }
 
-// Certificates returns a list of certificates
+// Certificates returns a list of certificates.
 func (c *Client) Certificates(ctx context.Context) ([]Certificate, error) {
 	req, err := c.newRequest(ctx, http.MethodGet, "certificate", nil, nil)
 	if err != nil {
@@ -105,7 +105,7 @@ func (c *Client) Certificates(ctx context.Context) ([]Certificate, error) {
 	return certificates, err
 }
 
-// Certificates returns a list of certificates
+// Certificates returns a list of certificates.
 func (c *Client) Certificate(ctx context.Context, id int) (*Certificate, error) {
 	req, err := c.newRequest(ctx, http.MethodGet, fmt.Sprintf("certificate/id/%d", id), nil, nil)
 	if err != nil {
@@ -117,7 +117,7 @@ func (c *Client) Certificate(ctx context.Context, id int) (*Certificate, error) 
 	return &certificate, err
 }
 
-// CertificateImport imports a certificate
+// CertificateImport imports a certificate.
 func (c *Client) CertificateImport(ctx context.Context, name string, cert tls.Certificate) (*Certificate, error) {
 	pkPEM, err := encodePrivateKeyPEM(cert)
 	if err != nil {
@@ -184,7 +184,7 @@ func encodePrivateKeyPEM(cert tls.Certificate) (string, error) {
 	return string(pem), nil
 }
 
-// CertificateDelete deletes a certificate
+// CertificateDelete deletes a certificate.
 func (c *Client) CertificateDelete(ctx context.Context, id int) error {
 	req, err := c.newRequest(ctx, http.MethodDelete, fmt.Sprintf("certificate/id/%d", id), nil, nil)
 	if err != nil {

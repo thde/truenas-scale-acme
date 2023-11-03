@@ -51,8 +51,15 @@ jobs:
       - uses: dominikh/staticcheck-action@v1.3.0
         with:
           install-go: false
-      - run: go install golang.org/x/vuln/cmd/govulncheck@latest
-      - run: govulncheck ./...
+      - uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          args: >
+            --enable
+            asasalint,bidichk,dupword,errcheck,errchkjson,godot,gofumpt,gosec,gosimple,ineffassign,misspell,loggercheck,revive,unused
+      - run: >
+          go install golang.org/x/vuln/cmd/govulncheck@latest &&
+          govulncheck ./...
   commitlint:
     runs-on: ubuntu-latest
     steps:
