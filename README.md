@@ -15,6 +15,24 @@ Currently the following providers are supported:
 
 If you require a different provider, feel free to create an issue. In theory, all [github.com/libdns](https://github.com/orgs/libdns/repositories?q=&type=all&language=&sort=stargazers) providers can be supported.
 
+## Install
+
+### Homebrew
+
+```shell
+brew tap thde/truenas-scale-acme
+brew install thde/truenas-scale-acme/truenas-scale-acme
+```
+
+### curl
+
+```shell
+mkdir truenas-scale-acme
+curl -L $(curl -s https://api.github.com/repos/thde/truenas-scale-acme/releases/latest |
+    jq -r '.assets[].browser_download_url | select(contains ("linux_amd64"))') |
+    tar xvz -C ./truenas-scale-acme
+```
+
 ## Getting Started
 
 1. [Create](https://www.truenas.com/docs/scale/scaletutorials/toptoolbar/managingapikeys/) an API key in TrueNAS
