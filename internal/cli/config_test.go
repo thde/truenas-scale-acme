@@ -20,10 +20,10 @@ func TestACMEConfig_DNSProvider(t *testing.T) {
 		want    certmagic.ACMEDNSProvider
 		wantErr bool
 	}{
-		{"no configured", fields{nil, nil},nil, true},
-		{"acme", fields{&acmedns.Provider{}, nil},&acmedns.Provider{}, false},
-		{"cloudflare", fields{nil, &cloudflare.Provider{}},&cloudflare.Provider{}, false},
-		{"multiple", fields{&acmedns.Provider{}, &cloudflare.Provider{}},&acmedns.Provider{}, false},
+		{"no configured", fields{nil, nil}, nil, true},
+		{"acme", fields{&acmedns.Provider{}, nil}, &acmedns.Provider{}, false},
+		{"cloudflare", fields{nil, &cloudflare.Provider{}}, &cloudflare.Provider{}, false},
+		{"multiple", fields{&acmedns.Provider{}, &cloudflare.Provider{}}, &acmedns.Provider{}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
