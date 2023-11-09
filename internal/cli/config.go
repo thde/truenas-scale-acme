@@ -10,7 +10,9 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/caddyserver/certmagic"
 	"github.com/libdns/acmedns"
+	"github.com/libdns/cloudflare"
 	"go.uber.org/zap"
 )
 
@@ -21,10 +23,21 @@ type ScaleConfig struct {
 }
 
 type ACMEConfig struct {
-	Email     string           `json:"email"`
-	TOSAgreed bool             `json:"tos_agreed"`
-	Resolvers []string         `json:"resolvers,omitempty"`
-	ACMEDNS   acmedns.Provider `json:"acme-dns"`
+	Email      string               `json:"email"`
+	TOSAgreed  bool                 `json:"tos_agreed"`
+	Resolvers  []string             `json:"resolvers,omitempty"`
+	ACMEDNS    *acmedns.Provider    `json:"acme-dns,omitempty"`
+	Cloudflare *cloudflare.Provider `json:"cloudflare,omitempty"`
+}
+
+func (ac *ACMEConfig) DNSProvider() (certmagic.ACMEDNSProvider, error) {
+	if ac.ACMEDNS != nil {
+		return ac.ACMEDNS, nil
+	} else if(ac.Cloudflare != nil) {
+		return ac.Cloudflare, nil
+	} else {
+		return nil, fmt.Errorf("no solver configured")
+	}
 }
 
 type Config struct {
@@ -76,6 +89,10 @@ func (c *Config) Valid() error {
 
 	if c.ACME.Email == "" {
 		errs = append(errs, fmt.Errorf("no acme.email specified: '%s'", c.Scale.APIKey))
+	}
+
+	if _, err = c.ACME.DNSProvider(); err != nil {
+		errs = append(errs, err)
 	}
 
 	if len(errs) != 0 {

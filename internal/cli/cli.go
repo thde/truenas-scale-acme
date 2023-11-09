@@ -11,6 +11,7 @@ import (
 
 	"github.com/caddyserver/certmagic"
 	"github.com/libdns/acmedns"
+	"github.com/libdns/cloudflare"
 	flag "github.com/spf13/pflag"
 	"go.uber.org/zap"
 
@@ -46,11 +47,14 @@ var (
 		ACME: ACMEConfig{
 			Email:     "myemail@example.com",
 			TOSAgreed: false,
-			ACMEDNS: acmedns.Provider{
+			ACMEDNS: &acmedns.Provider{
 				Username:  "00000000-0000-0000-0000-000000000000",
 				Password:  "s3cure",
 				Subdomain: "FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF",
 				ServerURL: "https://auth.acme-dns.io",
+			},
+			Cloudflare: &cloudflare.Provider{
+				APIToken: "s3cure",
 			},
 		},
 	}
@@ -177,10 +181,16 @@ func (c cmd) ensureACMECertificate(ctx context.Context, domain string, config AC
 	certmagic.DefaultACME.Logger = certmagicLogger.Named("acme")
 	certmagic.DefaultACME.Agreed = config.TOSAgreed
 	certmagic.DefaultACME.Email = config.Email
-	certmagic.DefaultACME.DNS01Solver = &certmagic.DNS01Solver{
-		DNSProvider: &config.ACMEDNS,
-		Resolvers:   config.Resolvers,
+	solver := &certmagic.DNS01Solver{
+		Resolvers: config.Resolvers,
 	}
+	provider, err := config.DNSProvider()
+	if err != nil {
+		return certmagic.Certificate{}, fmt.Errorf("dns provider could not be loaded: %w", err)
+	}
+
+	solver.DNSProvider = provider
+	certmagic.DefaultACME.DNS01Solver = solver
 
 	magic := certmagic.NewDefault()
 	magic.Issuers = []certmagic.Issuer{
@@ -193,7 +203,7 @@ func (c cmd) ensureACMECertificate(ctx context.Context, domain string, config AC
 		}),
 	}
 
-	err := magic.ManageSync(ctx, []string{domain})
+	err = magic.ManageSync(ctx, []string{domain})
 	if err != nil {
 		return certmagic.Certificate{}, err
 	}
