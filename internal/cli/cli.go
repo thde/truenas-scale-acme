@@ -15,13 +15,16 @@ import (
 	flag "github.com/spf13/pflag"
 	"go.uber.org/zap"
 
+	"github.com/thde/truenas-scale-acme/internal/cron"
 	"github.com/thde/truenas-scale-acme/internal/scale"
 )
 
 var (
-	configPath  = flag.String("config", defaultConfigPath(), "Configuration path")
-	flagHelp    = flag.BoolP("help", "h", false, "Print help message")
-	flagVersion = flag.BoolP("version", "v", false, "Print version information")
+	flagConfigPath = flag.String("config", defaultConfigPath(), "Configuration path")
+	flagDaemon     = flag.Bool("daemon", false, "Run in daemon mode")
+	flagSchedule   = flag.String("schedule", "22 22 * * *", "Cron schedule, if daemon mode is enabled")
+	flagHelp       = flag.BoolP("help", "h", false, "Print help message")
+	flagVersion    = flag.BoolP("version", "v", false, "Print version information")
 )
 
 var (
@@ -102,7 +105,7 @@ func (c cmd) Run(ctx context.Context) error {
 		return nil
 	}
 
-	config, err := c.loadConfig(*configPath)
+	config, err := c.loadConfig(*flagConfigPath)
 	if err != nil {
 		return err
 	}
@@ -128,8 +131,37 @@ func (c cmd) Run(ctx context.Context) error {
 		scale.WithHTTPClient(httpClient),
 	)
 
+	if *flagDaemon {
+		c.CLILogger.Info("running in daemon mode", zap.String("schedule", *flagSchedule))
+	}
+
+	err = c.ensureCertificate(ctx, config, client)
+	if err != nil {
+		return err
+	}
+	if !*flagDaemon {
+		return nil
+	}
+
+	ticker, err := cron.NewTickerWithLocation(*flagSchedule, time.Local)
+	if err != nil {
+		return fmt.Errorf("error parsing schedule %s: %w", *flagSchedule, err)
+	}
+	defer ticker.Stop()
+
+	for range ticker.C {
+		err = c.ensureCertificate(ctx, config, client)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (c cmd) ensureCertificate(ctx context.Context, cfg *Config, client *scale.Client) error {
 	c.CertLogger.Info("ensure valid certificate is present")
-	currentCert, err := c.ensureACMECertificate(ctx, config.Domain, config.ACME)
+	currentCert, err := c.ensureACMECertificate(ctx, cfg.Domain, cfg.ACME)
 	if err != nil {
 		return err
 	}
@@ -139,7 +171,7 @@ func (c cmd) Run(ctx context.Context) error {
 		return err
 	}
 
-	return c.removeExpiredCerts(ctx, client, config.Domain, activeCert)
+	return c.removeExpiredCerts(ctx, client, cfg.Domain, activeCert)
 }
 
 func (c cmd) ensureUICertificate(ctx context.Context, client *scale.Client, currentCert certmagic.Certificate) (*scale.Certificate, error) {
