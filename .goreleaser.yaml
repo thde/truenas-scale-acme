@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=https://goreleaser.com/static/schema.json
 # vim: set ts=2 sw=2 tw=0 fo=cnqoj
 env:
-  - KO_DOCKER_REPO=ghcr.io//{{ .Env.GITHUB_REPOSITORY_OWNER }}/{{ .ProjectName }}
+  - KO_DOCKER_REPO=ghcr.io/{{ .Env.GITHUB_REPOSITORY }}
 before:
   hooks:
     - go mod tidy
