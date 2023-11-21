@@ -29,6 +29,7 @@ brews:
     license: MIT
 kos:
   - base_image: cgr.dev/chainguard/static
+    bare: true
     platforms:
       - linux/amd64
       - linux/arm64
