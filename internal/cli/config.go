@@ -35,9 +35,9 @@ func (ac *ACMEConfig) DNSProvider() (certmagic.ACMEDNSProvider, error) {
 		return ac.ACMEDNS, nil
 	} else if ac.Cloudflare != nil {
 		return ac.Cloudflare, nil
-	} else {
-		return nil, fmt.Errorf("no solver configured")
 	}
+
+	return nil, fmt.Errorf("no solver configured")
 }
 
 type Config struct {
