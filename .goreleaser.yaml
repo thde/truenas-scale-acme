@@ -1,6 +1,7 @@
 # yaml-language-server: $schema=https://goreleaser.com/static/schema.json
 # vim: set ts=2 sw=2 tw=0 fo=cnqoj
-
+env:
+  - KO_DOCKER_REPO=ghcr.io//{{ .Env.GITHUB_REPOSITORY_OWNER }}/{{ .ProjectName }}
 before:
   hooks:
     - go mod tidy
@@ -28,7 +29,6 @@ brews:
     license: MIT
 kos:
   - base_image: cgr.dev/chainguard/static
-    repository: "ghcr.io//{{ .Env.GITHUB_REPOSITORY_OWNER }}/{{ .ProjectName }}"
     platforms:
       - linux/amd64
       - linux/arm64
