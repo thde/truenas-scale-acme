@@ -26,3 +26,13 @@ brews:
     homepage: "https://github.com/{{ .Env.GITHUB_REPOSITORY_OWNER }}/{{ .ProjectName }}"
     description: Optain and manage certificates for TrueNAS Scale.
     license: MIT
+kos:
+  - base_image: cgr.dev/chainguard/static
+    repository: "ghcr.io//{{ .Env.GITHUB_REPOSITORY_OWNER }}/{{ .ProjectName }}"
+    platforms:
+      - linux/amd64
+      - linux/arm64
+    tags:
+    - latest
+    - '{{.Tag}}'
+    creation_time: '{{.CommitTimestamp}}'
