@@ -26,6 +26,7 @@ type ACMEConfig struct {
 	Email      string               `json:"email"`
 	TOSAgreed  bool                 `json:"tos_agreed"`
 	Resolvers  []string             `json:"resolvers,omitempty"`
+	Storage    string               `json:"storage,omitempty"`
 	ACMEDNS    *acmedns.Provider    `json:"acme-dns,omitempty"`
 	Cloudflare *cloudflare.Provider `json:"cloudflare,omitempty"`
 }
@@ -53,6 +54,21 @@ func defaultConfigPath() string {
 	}
 
 	return filepath.Join(base, "truenas-scale-acme", "config.json")
+}
+
+func defaultDataDir() string {
+	baseDir := os.Getenv("XDG_DATA_HOME")
+
+	if baseDir == "" {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return ""
+		}
+
+		baseDir = filepath.Join(home, ".local")
+	}
+
+	return filepath.Join(baseDir, "truenas-scale-acme")
 }
 
 func (c *Config) Merge(r io.Reader) error {

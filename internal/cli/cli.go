@@ -38,6 +38,7 @@ var (
 		},
 		ACME: ACMEConfig{
 			Resolvers: defaultResolvers,
+			Storage:   defaultDataDir(),
 		},
 	}
 	exampleConfig = Config{
@@ -213,6 +214,7 @@ func (c cmd) ensureACMECertificate(ctx context.Context, domain string, config AC
 	certmagic.DefaultACME.Logger = certmagicLogger.Named("acme")
 	certmagic.DefaultACME.Agreed = config.TOSAgreed
 	certmagic.DefaultACME.Email = config.Email
+	certmagic.Default.Storage = &certmagic.FileStorage{Path: config.Storage}
 	solver := &certmagic.DNS01Solver{
 		Resolvers: config.Resolvers,
 	}
