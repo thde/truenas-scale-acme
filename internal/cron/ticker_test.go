@@ -8,15 +8,14 @@ import (
 
 func TestCronTicker_Stop(t *testing.T) {
 	ticker, _ := NewTicker("@daily")
-
 	timeoutTimer := time.NewTimer(2 * time.Second)
 
-	kCopy := ticker.k
+	c := ticker.k
 	ticker.Stop()
 Outer:
 	for {
 		select {
-		case <-kCopy:
+		case <-c:
 			break Outer
 		case <-timeoutTimer.C:
 			t.Fatal("Expected message on ticker 'k' channel within 2 seconds, but did not receive one")
