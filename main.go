@@ -8,6 +8,8 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
+	"github.com/mattn/go-isatty"
+
 	"github.com/thde/truenas-scale-acme/internal/cli"
 )
 
@@ -19,16 +21,7 @@ var (
 )
 
 func main() {
-	enc := zap.NewProductionEncoderConfig()
-	enc.EncodeTime = zapcore.RFC3339TimeEncoder
-	enc.EncodeLevel = zapcore.CapitalColorLevelEncoder
-	enc.ConsoleSeparator = " "
-
-	logger := zap.New(zapcore.NewCore(
-		zapcore.NewConsoleEncoder(enc),
-		os.Stderr,
-		zap.InfoLevel,
-	))
+	logger := initLogger(os.Stderr)
 
 	if err := cli.Run(context.Background(), logger, &cli.BuildInfo{
 		Version:   version,
@@ -39,6 +32,22 @@ func main() {
 		logger.Error(err.Error())
 		os.Exit(1)
 	}
+}
+
+func initLogger(out *os.File) *zap.Logger {
+	enc := zap.NewProductionEncoderConfig()
+	enc.EncodeTime = zapcore.RFC3339TimeEncoder
+	enc.ConsoleSeparator = " "
+	enc.EncodeLevel = zapcore.CapitalLevelEncoder
+	if isatty.IsTerminal(out.Fd()) {
+		enc.EncodeLevel = zapcore.CapitalColorLevelEncoder
+	}
+
+	return zap.New(zapcore.NewCore(
+		zapcore.NewConsoleEncoder(enc),
+		out,
+		zap.InfoLevel,
+	))
 }
 
 func init() {
