@@ -16,12 +16,12 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: WillAbides/setup-go-faster@v1.13.0
-        with:
-          go-version: ^1.21
       - uses: actions/checkout@v4
         with:
           fetch-depth: 1
+      - uses: WillAbides/setup-go-faster@v1.13.0
+        with:
+          go-version: ^1.21.5
       - uses: actions/cache@v3
         with:
           path: ~/go/pkg/mod
@@ -34,12 +34,12 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: WillAbides/setup-go-faster@v1.13.0
-        with:
-          go-version: ^1.21
       - uses: actions/checkout@v4
         with:
           fetch-depth: 1
+      - uses: WillAbides/setup-go-faster@v1.13.0
+        with:
+          go-version: ^1.21.5
       - uses: actions/cache@v3
         with:
           path: ~/go/pkg/mod
