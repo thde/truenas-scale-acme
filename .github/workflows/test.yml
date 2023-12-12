@@ -60,8 +60,3 @@ jobs:
       - run: >
           go install golang.org/x/vuln/cmd/govulncheck@latest &&
           govulncheck ./...
-  commitlint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: wagoid/commitlint-github-action@v5
