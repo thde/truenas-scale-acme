@@ -3,7 +3,7 @@ module github.com/thde/truenas-scale-acme
 go 1.21.2
 
 require (
-	github.com/caddyserver/certmagic v0.19.2
+	github.com/caddyserver/certmagic v0.20.0
 	github.com/google/go-querystring v1.1.0
 	github.com/libdns/acmedns v0.2.0
 	github.com/libdns/cloudflare v0.1.0
