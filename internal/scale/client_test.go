@@ -86,7 +86,7 @@ func TestDoJSON(t *testing.T) {
 		Result string `json:"result"`
 	}
 
-	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
 		_, err := rw.Write([]byte(`{"result": "success"}`))
 		if err != nil {
 			t.Error(err)
