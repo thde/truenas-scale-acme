@@ -17,7 +17,7 @@ func TestACMEConfig_DNSProvider(t *testing.T) {
 	tests := []struct {
 		name    string
 		fields  fields
-		want    certmagic.ACMEDNSProvider
+		want    certmagic.DNSProvider
 		wantErr bool
 	}{
 		{"no configured", fields{nil, nil}, nil, true},
