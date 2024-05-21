@@ -12,11 +12,13 @@ import (
 	"github.com/caddyserver/certmagic"
 	"github.com/libdns/acmedns"
 	"github.com/libdns/cloudflare"
+	"github.com/mholt/acmez/v2/acme"
 	flag "github.com/spf13/pflag"
 	"go.uber.org/zap"
 
 	"github.com/thde/truenas-scale-acme/internal/cron"
 	"github.com/thde/truenas-scale-acme/internal/scale"
+	"github.com/thde/truenas-scale-acme/internal/zerossl"
 )
 
 var (
@@ -215,16 +217,15 @@ func (c cmd) ensureACMECertificate(ctx context.Context, domain string, config AC
 	certmagic.DefaultACME.Agreed = config.TOSAgreed
 	certmagic.DefaultACME.Email = config.Email
 	certmagic.Default.Storage = &certmagic.FileStorage{Path: config.Storage}
-	solver := &certmagic.DNS01Solver{
-		Resolvers: config.Resolvers,
-	}
+
 	provider, err := config.DNSProvider()
 	if err != nil {
 		return certmagic.Certificate{}, fmt.Errorf("dns provider could not be loaded: %w", err)
 	}
-
-	solver.DNSProvider = provider
-	certmagic.DefaultACME.DNS01Solver = solver
+	certmagic.DefaultACME.DNS01Solver = &certmagic.DNS01Solver{DNSManager: certmagic.DNSManager{
+		Resolvers:   config.Resolvers,
+		DNSProvider: provider,
+	}}
 
 	magic := certmagic.NewDefault()
 	magic.Issuers = []certmagic.Issuer{
@@ -232,8 +233,17 @@ func (c cmd) ensureACMECertificate(ctx context.Context, domain string, config AC
 			CA:     certmagic.LetsEncryptProductionCA,
 			TestCA: certmagic.LetsEncryptStagingCA,
 		}),
+		// ZeroSSL requires EAB
 		certmagic.NewACMEIssuer(magic, certmagic.ACMEIssuer{
 			CA: certmagic.ZeroSSLProductionCA,
+			NewAccountFunc: func(ctx context.Context, issuer *certmagic.ACMEIssuer, account acme.Account) (acme.Account, error) {
+				if issuer.ExternalAccount != nil {
+					return account, nil
+				}
+				credentials, account, err := zerossl.EABCredentials(ctx, config.Email, account)
+				issuer.ExternalAccount = credentials
+				return account, err
+			},
 		}),
 	}
 

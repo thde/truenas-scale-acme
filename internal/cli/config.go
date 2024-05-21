@@ -31,7 +31,7 @@ type ACMEConfig struct {
 	Cloudflare *cloudflare.Provider `json:"cloudflare,omitempty"`
 }
 
-func (ac *ACMEConfig) DNSProvider() (certmagic.ACMEDNSProvider, error) {
+func (ac *ACMEConfig) DNSProvider() (certmagic.DNSProvider, error) {
 	if ac.ACMEDNS != nil {
 		return ac.ACMEDNS, nil
 	} else if ac.Cloudflare != nil {
