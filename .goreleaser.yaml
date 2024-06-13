@@ -1,5 +1,6 @@
 # yaml-language-server: $schema=https://goreleaser.com/static/schema.json
 # vim: set ts=2 sw=2 tw=0 fo=cnqoj
+version: 2
 env:
   - KO_DOCKER_REPO=ghcr.io/{{ .Env.GITHUB_REPOSITORY }}
 before:
@@ -22,7 +23,7 @@ brews:
   - repository:
       owner: "{{ .Env.GITHUB_REPOSITORY_OWNER }}"
       name: "{{ .ProjectName }}"
-    folder: Formula
+    directory: Formula
     commit_msg_template: "build: update formula to version {{ .Tag }}"
     homepage: "https://github.com/{{ .Env.GITHUB_REPOSITORY_OWNER }}/{{ .ProjectName }}"
     description: Optain and manage certificates for TrueNAS Scale.
@@ -34,6 +35,6 @@ kos:
       - linux/amd64
       - linux/arm64
     tags:
-    - latest
-    - '{{.Tag}}'
-    creation_time: '{{.CommitTimestamp}}'
+      - latest
+      - "{{.Tag}}"
+    creation_time: "{{.CommitTimestamp}}"
