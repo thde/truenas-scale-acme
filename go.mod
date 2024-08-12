@@ -9,7 +9,7 @@ require (
 	github.com/libdns/acmedns v0.2.0
 	github.com/libdns/cloudflare v0.1.1
 	github.com/mattn/go-isatty v0.0.20
-	github.com/mholt/acmez/v2 v2.0.1
+	github.com/mholt/acmez/v2 v2.0.2
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/spf13/pflag v1.0.5
 	go.uber.org/zap v1.27.0
