@@ -108,6 +108,13 @@ func (c cmd) Run(ctx context.Context) error {
 		return nil
 	}
 
+	c.CLILogger.Info("starting",
+		zap.String("version", c.BuildInfo.Version),
+		zap.String("go", c.BuildInfo.GoVersion),
+		zap.String("commit", c.BuildInfo.Commit),
+		zap.String("date", c.BuildInfo.Date),
+	)
+
 	config, err := c.loadConfig(*flagConfigPath)
 	if err != nil {
 		return err
@@ -135,7 +142,7 @@ func (c cmd) Run(ctx context.Context) error {
 	)
 
 	if *flagDaemon {
-		c.CLILogger.Info("running in daemon mode", zap.String("schedule", *flagSchedule))
+		c.CLILogger.Info("daemon mode enabled", zap.String("schedule", *flagSchedule))
 	}
 
 	err = c.ensureCertificate(ctx, config, client)
