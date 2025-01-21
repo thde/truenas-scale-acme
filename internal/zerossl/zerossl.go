@@ -10,7 +10,7 @@ import (
 
 	"github.com/caddyserver/certmagic"
 	"github.com/caddyserver/zerossl"
-	"github.com/mholt/acmez/v2/acme"
+	"github.com/mholt/acmez/v3/acme"
 )
 
 // EABCredentials generates ZeroSSL EAB credentials for the primary contact email

@@ -12,7 +12,7 @@ import (
 	"github.com/caddyserver/certmagic"
 	"github.com/libdns/acmedns"
 	"github.com/libdns/cloudflare"
-	"github.com/mholt/acmez/v2/acme"
+	"github.com/mholt/acmez/v3/acme"
 	flag "github.com/spf13/pflag"
 	"go.uber.org/zap"
 
