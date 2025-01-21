@@ -5,21 +5,21 @@
 class TruenasScaleAcme < Formula
   desc "Optain and manage certificates for TrueNAS Scale."
   homepage "https://github.com/thde/truenas-scale-acme"
-  version "0.6.1"
+  version "0.6.2"
   license "MIT"
 
   on_macos do
     if Hardware::CPU.intel?
-      url "https://github.com/thde/truenas-scale-acme/releases/download/v0.6.1/truenas-scale-acme_0.6.1_darwin_amd64.tar.gz"
-      sha256 "c317e3d8f5d053ede9203cfc232da078b28fe9d4972c850c8ec3892fc79eeb13"
+      url "https://github.com/thde/truenas-scale-acme/releases/download/v0.6.2/truenas-scale-acme_0.6.2_darwin_amd64.tar.gz"
+      sha256 "e7be4d54d72f405ebd56123a795a74b6980ce8b413b8636fbe05e13e0ec3eb6a"
 
       def install
         bin.install "truenas-scale-acme"
       end
     end
     if Hardware::CPU.arm?
-      url "https://github.com/thde/truenas-scale-acme/releases/download/v0.6.1/truenas-scale-acme_0.6.1_darwin_arm64.tar.gz"
-      sha256 "cdb35b1a9ec12220fd6867462c5e6a03a3f2c017f635b5a19a49275ec6f44580"
+      url "https://github.com/thde/truenas-scale-acme/releases/download/v0.6.2/truenas-scale-acme_0.6.2_darwin_arm64.tar.gz"
+      sha256 "3f195a03a8f9578d832655999220c5469a16d9f34b5ea3adf4ce7ecec96d5bc4"
 
       def install
         bin.install "truenas-scale-acme"
@@ -30,8 +30,8 @@ class TruenasScaleAcme < Formula
   on_linux do
     if Hardware::CPU.intel?
       if Hardware::CPU.is_64_bit?
-        url "https://github.com/thde/truenas-scale-acme/releases/download/v0.6.1/truenas-scale-acme_0.6.1_linux_amd64.tar.gz"
-        sha256 "87bc70e655a7ebf3b2cd4e5c4789f12c8aefe6efd248f367d60be73a1f71887b"
+        url "https://github.com/thde/truenas-scale-acme/releases/download/v0.6.2/truenas-scale-acme_0.6.2_linux_amd64.tar.gz"
+        sha256 "d638e78cd2486f077d967bc109a9b8b5208f4d129b78bcd04b66144f0a780c49"
 
         def install
           bin.install "truenas-scale-acme"
@@ -40,8 +40,8 @@ class TruenasScaleAcme < Formula
     end
     if Hardware::CPU.arm?
       if Hardware::CPU.is_64_bit?
-        url "https://github.com/thde/truenas-scale-acme/releases/download/v0.6.1/truenas-scale-acme_0.6.1_linux_arm64.tar.gz"
-        sha256 "b4f8285bc307a1e4f5f8406020993451b5243fe0d11dcaf798aa6215f0b1200e"
+        url "https://github.com/thde/truenas-scale-acme/releases/download/v0.6.2/truenas-scale-acme_0.6.2_linux_arm64.tar.gz"
+        sha256 "c32bde327af67f05fd0ebd9503e241fa29ee38263f8659335a4db27cef3e607c"
 
         def install
           bin.install "truenas-scale-acme"
