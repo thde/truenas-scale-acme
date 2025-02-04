@@ -13,7 +13,7 @@ require (
 	github.com/mattn/go-isatty v0.0.20
 	github.com/mholt/acmez/v3 v3.0.1
 	github.com/robfig/cron/v3 v3.0.1
-	github.com/spf13/pflag v1.0.5
+	github.com/spf13/pflag v1.0.6
 	go.uber.org/zap v1.27.0
 )
 
