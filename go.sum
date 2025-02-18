@@ -13,10 +13,10 @@ github.com/klauspost/cpuid/v2 v2.2.9 h1:66ze0taIn2H33fBvCkXuv9BmCwDfafmiIVpKV9kK
 github.com/klauspost/cpuid/v2 v2.2.9/go.mod h1:rqkxqrZ1EhYM9G+hXH7YdowN5R5RGN6NK4QwQ3WMXF8=
 github.com/libdns/acmedns v0.2.0 h1:zTXdHZwe3r2issdVRyqt5/4X2yHpiBVmFnTrwBA29ik=
 github.com/libdns/acmedns v0.2.0/go.mod h1:XlKHilQQK/IGHYY//vCb903PdG4Wc/XnDQzcMp2hV3g=
-github.com/libdns/cloudflare v0.1.1 h1:FVPfWwP8zZCqj268LZjmkDleXlHPlFU9KC4OJ3yn054=
-github.com/libdns/cloudflare v0.1.1/go.mod h1:9VK91idpOjg6v7/WbjkEW49bSCxj00ALesIFDhJ8PBU=
-github.com/libdns/libdns v0.2.2 h1:O6ws7bAfRPaBsgAYt8MDe2HcNBGC29hkZ9MX2eUSX3s=
-github.com/libdns/libdns v0.2.2/go.mod h1:4Bj9+5CQiNMVGf87wjX4CY3HQJypUHRuLvlsfsZqLWQ=
+github.com/libdns/cloudflare v0.1.2 h1:RWUqBSojAFpg2O/jzS29DnkCP9oWQj3LmNEU8OulTLs=
+github.com/libdns/cloudflare v0.1.2/go.mod h1:XbvSCSMcxspwpSialM3bq0LsS3/Houy9WYxW8Ok8b6M=
+github.com/libdns/libdns v0.2.3 h1:ba30K4ObwMGB/QTmqUxf3H4/GmUrCAIkMWejeGl12v8=
+github.com/libdns/libdns v0.2.3/go.mod h1:4Bj9+5CQiNMVGf87wjX4CY3HQJypUHRuLvlsfsZqLWQ=
 github.com/mattn/go-isatty v0.0.20 h1:xfD0iDuEKnDkl03q4limB+vH+GxLEtL/jb4xVJSWWEY=
 github.com/mattn/go-isatty v0.0.20/go.mod h1:W+V8PltTTMOvKvAeJH7IuucS94S2C6jfK/D7dTCTo3Y=
 github.com/mholt/acmez/v3 v3.0.1 h1:4PcjKjaySlgXK857aTfDuRbmnM5gb3Ruz3tvoSJAUp8=
