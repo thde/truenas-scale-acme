@@ -9,7 +9,7 @@ require (
 	github.com/caddyserver/zerossl v0.1.3
 	github.com/google/go-querystring v1.1.0
 	github.com/libdns/acmedns v0.2.0
-	github.com/libdns/cloudflare v0.1.2
+	github.com/libdns/cloudflare v0.1.3
 	github.com/mattn/go-isatty v0.0.20
 	github.com/mholt/acmez/v3 v3.0.1
 	github.com/robfig/cron/v3 v3.0.1
