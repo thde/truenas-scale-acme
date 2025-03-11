@@ -1,7 +1,8 @@
 module github.com/thde/truenas-scale-acme
 
-go 1.22.0
-toolchain go1.23.5
+go 1.23.0
+
+toolchain go1.24.1
 
 require (
 	github.com/caddyserver/certmagic v0.22.0
