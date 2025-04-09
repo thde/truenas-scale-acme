@@ -14,11 +14,10 @@ import (
 	"github.com/libdns/cloudflare"
 	"github.com/mholt/acmez/v3/acme"
 	flag "github.com/spf13/pflag"
-	"go.uber.org/zap"
-
 	"github.com/thde/truenas-scale-acme/internal/cron"
 	"github.com/thde/truenas-scale-acme/internal/scale"
 	"github.com/thde/truenas-scale-acme/internal/zerossl"
+	"go.uber.org/zap"
 )
 
 var (
@@ -109,10 +108,10 @@ func (c cmd) Run(ctx context.Context) error {
 	}
 
 	c.CLILogger.Info("starting",
-		zap.String("version", c.BuildInfo.Version),
-		zap.String("go", c.BuildInfo.GoVersion),
-		zap.String("commit", c.BuildInfo.Commit),
-		zap.String("date", c.BuildInfo.Date),
+		zap.String("version", c.Version),
+		zap.String("go", c.GoVersion),
+		zap.String("commit", c.Commit),
+		zap.String("date", c.Date),
 	)
 
 	config, err := c.loadConfig(*flagConfigPath)

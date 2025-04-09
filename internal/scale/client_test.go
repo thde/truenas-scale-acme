@@ -61,19 +61,19 @@ func TestDo(t *testing.T) {
 		t.Error(err)
 	}
 
-	res, err := c.do(req)
+	resp, err := c.do(req)
 	if err != nil {
 		t.Error(err)
 	}
 
-	body, err := io.ReadAll(res.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		t.Error(err)
 	}
-	defer res.Body.Close()
+	defer resp.Body.Close()
 
-	if res.StatusCode != http.StatusOK {
-		t.Error("expected", http.StatusOK, "got", res.StatusCode)
+	if resp.StatusCode != http.StatusOK {
+		t.Error("expected", http.StatusOK, "got", resp.StatusCode)
 	}
 
 	if string(body) != "OK" {

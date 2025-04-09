@@ -111,7 +111,7 @@ func (c *Client) CoreJobWait(ctx context.Context, id int) (*Job, error) {
 	}
 }
 
-// doJob exectures a request that returns a Job and waits for it to finish.
+// doJob executes a request that returns a Job and waits for it to finish.
 func (c *Client) doJob(req *http.Request) (*Job, error) {
 	resp, err := c.do(req)
 	if err != nil {
