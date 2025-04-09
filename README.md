@@ -2,9 +2,9 @@
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/thde/truenas-scale-acme)](https://goreportcard.com/report/github.com/thde/truenas-scale-acme)
 
-`truenas-scale-acme` optains and manages certificates for TrueNAS Scale using the [ACME DNS-01 challenge](https://letsencrypt.org/docs/challenge-types/#dns-01-challenge) and the [TrueNAS Scale API](https://www.truenas.com/docs/api/scale_rest_api.html).
+`truenas-scale-acme` obtains and manages certificates for TrueNAS Scale using the [ACME DNS-01 challenge](https://letsencrypt.org/docs/challenge-types/#dns-01-challenge) and the [TrueNAS Scale API](https://www.truenas.com/docs/api/scale_rest_api.html).
 
-It uses Caddy's [caddyserver/certmagic](https://github.com/caddyserver/certmagic) library internally to optain and renew SSL certificates and ensures that TrueNAS uses a valid certificate to serve requests.
+It uses Caddy's [caddyserver/certmagic](https://github.com/caddyserver/certmagic) library internally to obtain and renew SSL certificates and ensures that TrueNAS uses a valid certificate to serve requests.
 
 ## Supported DNS-Providers
 

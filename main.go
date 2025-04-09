@@ -5,12 +5,10 @@ import (
 	"os"
 	"runtime/debug"
 
+	"github.com/mattn/go-isatty"
+	"github.com/thde/truenas-scale-acme/internal/cli"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-
-	"github.com/mattn/go-isatty"
-
-	"github.com/thde/truenas-scale-acme/internal/cli"
 )
 
 var (

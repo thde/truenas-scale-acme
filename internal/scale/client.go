@@ -16,7 +16,7 @@ const (
 	DefaultUserAgent = "truenas-scale-acme/0.1"
 )
 
-// ErrStatus respresents a non success status code error.
+// ErrStatus represents a non success status code error.
 var ErrStatus = errors.New("status code error")
 
 type Client struct {
@@ -78,7 +78,7 @@ func (c *Client) newRequest(
 	ctx context.Context,
 	method, path string,
 	params url.Values,
-	body interface{}, //nolint:unparam
+	body any,
 ) (*http.Request, error) {
 	if params == nil {
 		params = url.Values{}
@@ -114,12 +114,12 @@ func (c *Client) newRequest(
 	return req, nil
 }
 
-func (c *Client) doJSON(req *http.Request, v interface{}) (*http.Response, error) {
+func (c *Client) doJSON(req *http.Request, v any) (*http.Response, error) {
 	resp, err := c.do(req)
 	if err != nil {
 		return nil, err
 	}
-	if resp.Body != nil {
+	if resp != nil && resp.Body != nil {
 		defer resp.Body.Close()
 		err = json.NewDecoder(resp.Body).Decode(&v)
 		if err != nil {
