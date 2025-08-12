@@ -11,12 +11,12 @@ github.com/google/go-querystring v1.1.0 h1:AnCroh3fv4ZBgVIf1Iwtovgjaw/GiKJo8M8yD
 github.com/google/go-querystring v1.1.0/go.mod h1:Kcdr2DB4koayq7X8pmAG4sNG59So17icRSOU623lUBU=
 github.com/klauspost/cpuid/v2 v2.2.10 h1:tBs3QSyvjDyFTq3uoc/9xFpCuOsJQFNPiAhYdw2skhE=
 github.com/klauspost/cpuid/v2 v2.2.10/go.mod h1:hqwkgyIinND0mEev00jJYCxPNVRVXFQeu1XKlok6oO0=
-github.com/libdns/acmedns v0.2.0 h1:zTXdHZwe3r2issdVRyqt5/4X2yHpiBVmFnTrwBA29ik=
-github.com/libdns/acmedns v0.2.0/go.mod h1:XlKHilQQK/IGHYY//vCb903PdG4Wc/XnDQzcMp2hV3g=
+github.com/libdns/acmedns v0.4.0 h1:45N3ikdxdQly/iCv2g3XZyYSrOmNaptZIYPVfjNNOx8=
+github.com/libdns/acmedns v0.4.0/go.mod h1:X7UAFP1Ep9NpTwWpVlrZzJLR7epynAy0wrIxSPFgKjQ=
 github.com/libdns/cloudflare v0.1.3 h1:XPFa2f3Mm/3FDNwl9Ki2bfAQJ0Cm5GQB0e8PQVy25Us=
 github.com/libdns/cloudflare v0.1.3/go.mod h1:XbvSCSMcxspwpSialM3bq0LsS3/Houy9WYxW8Ok8b6M=
-github.com/libdns/libdns v0.2.3 h1:ba30K4ObwMGB/QTmqUxf3H4/GmUrCAIkMWejeGl12v8=
-github.com/libdns/libdns v0.2.3/go.mod h1:4Bj9+5CQiNMVGf87wjX4CY3HQJypUHRuLvlsfsZqLWQ=
+github.com/libdns/libdns v1.1.0 h1:9ze/tWvt7Df6sbhOJRB8jT33GHEHpEQXdtkE3hPthbU=
+github.com/libdns/libdns v1.1.0/go.mod h1:4Bj9+5CQiNMVGf87wjX4CY3HQJypUHRuLvlsfsZqLWQ=
 github.com/mattn/go-isatty v0.0.20 h1:xfD0iDuEKnDkl03q4limB+vH+GxLEtL/jb4xVJSWWEY=
 github.com/mattn/go-isatty v0.0.20/go.mod h1:W+V8PltTTMOvKvAeJH7IuucS94S2C6jfK/D7dTCTo3Y=
 github.com/mholt/acmez/v3 v3.1.2 h1:auob8J/0FhmdClQicvJvuDavgd5ezwLBfKuYmynhYzc=
