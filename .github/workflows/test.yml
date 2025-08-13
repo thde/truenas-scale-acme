@@ -58,3 +58,4 @@ jobs:
         with:
           repo-checkout: false
           go-version: stable
+      - run: go run golang.org/x/tools/gopls/internal/analysis/modernize/cmd/modernize@latest -fix -test -diff ./...
