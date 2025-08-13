@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/caddyserver/certmagic"
+	"github.com/klauspost/compress/gzhttp"
 	"github.com/libdns/acmedns"
 	"github.com/libdns/cloudflare"
 	"github.com/mholt/acmez/v3/acme"
@@ -124,9 +125,9 @@ func (c cmd) Run(ctx context.Context) error {
 
 	httpClient := &http.Client{
 		Timeout: 30 * time.Second,
-		Transport: &http.Transport{
+		Transport: gzhttp.Transport(&http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: config.Scale.SkipVerify}, //nolint: gosec
-		},
+		}),
 	}
 
 	u, err := url.Parse(config.Scale.URL)
