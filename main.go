@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	"os"
+	"os/signal"
 	"runtime/debug"
+	"syscall"
 
 	"github.com/mattn/go-isatty"
 	"github.com/thde/truenas-scale-acme/internal/cli"
@@ -19,9 +21,12 @@ var (
 )
 
 func main() {
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
 	logger := initLogger(os.Stderr)
 
-	if err := cli.Run(context.Background(), logger, &cli.BuildInfo{
+	if err := cli.Run(ctx, logger, &cli.BuildInfo{
 		Version:   version,
 		Commit:    commit,
 		Date:      date,
