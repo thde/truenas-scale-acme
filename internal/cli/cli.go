@@ -135,17 +135,22 @@ func (c cmd) Run(ctx context.Context) error {
 		return err
 	}
 
-	client := scale.NewClient(
+	scaleClient := scale.NewClient(
 		scale.WithAPIKey(config.Scale.APIKey),
 		scale.WithBaseURL(u),
 		scale.WithHTTPClient(httpClient),
 	)
 
+	acmeClient, err := c.acmeClient(config.ACME)
+	if err != nil {
+		return err
+	}
+
 	if *flagDaemon {
 		c.CLILogger.Info("daemon mode enabled", zap.String("schedule", *flagSchedule))
 	}
 
-	err = c.ensureCertificate(ctx, config, client)
+	err = c.ensureCertificate(ctx, config, acmeClient, scaleClient)
 	if err != nil {
 		return err
 	}
@@ -160,7 +165,7 @@ func (c cmd) Run(ctx context.Context) error {
 	defer ticker.Stop()
 
 	for range ticker.C {
-		err = c.ensureCertificate(ctx, config, client)
+		err = c.ensureCertificate(ctx, config, acmeClient, scaleClient)
 		if err != nil {
 			return err
 		}
@@ -169,19 +174,31 @@ func (c cmd) Run(ctx context.Context) error {
 	return nil
 }
 
-func (c cmd) ensureCertificate(ctx context.Context, cfg *Config, client *scale.Client) error {
+func (c cmd) ensureCertificate(ctx context.Context, cfg *Config, acmeClient *certmagic.Config, scaleClient *scale.Client) error {
 	c.CertLogger.Info("ensure valid certificate is present")
-	currentCert, err := c.ensureACMECertificate(ctx, cfg.Domain, cfg.ACME)
+	currentCert, err := c.ensureACMECertificate(ctx, cfg.Domain, acmeClient)
 	if err != nil {
 		return err
 	}
 
-	activeCert, err := c.ensureUICertificate(ctx, client, currentCert)
+	activeCert, err := c.ensureUICertificate(ctx, scaleClient, currentCert)
 	if err != nil {
 		return err
 	}
 
-	return c.removeExpiredCerts(ctx, client, cfg.Domain, activeCert)
+	return c.removeExpiredCerts(ctx, scaleClient, cfg.Domain, activeCert)
+}
+
+func (c cmd) ensureACMECertificate(ctx context.Context, domain string, acmeClient *certmagic.Config) (certmagic.Certificate, error) {
+	if err := acmeClient.ManageSync(ctx, []string{domain}); err != nil {
+		return certmagic.Certificate{}, fmt.Errorf("error ensuring certificate for %q: %w", domain, err)
+	}
+	currentCert, err := acmeClient.CacheManagedCertificate(ctx, domain)
+	if err != nil {
+		return currentCert, fmt.Errorf("error storing certificate for %q: %w", domain, err)
+	}
+
+	return currentCert, nil
 }
 
 func (c cmd) ensureUICertificate(ctx context.Context, client *scale.Client, currentCert certmagic.Certificate) (*scale.Certificate, error) {
@@ -217,7 +234,7 @@ func (c cmd) ensureUICertificate(ctx context.Context, client *scale.Client, curr
 	return activeCert, nil
 }
 
-func (c cmd) ensureACMECertificate(ctx context.Context, domain string, config ACMEConfig) (certmagic.Certificate, error) {
+func (c cmd) acmeClient(config ACMEConfig) (*certmagic.Config, error) {
 	certmagicLogger := c.CertLogger.Named("certmagic")
 	certmagic.Default.Logger = certmagicLogger.WithOptions(zap.IncreaseLevel(zap.WarnLevel))
 	certmagic.DefaultACME.Logger = certmagicLogger.Named("acme")
@@ -227,7 +244,7 @@ func (c cmd) ensureACMECertificate(ctx context.Context, domain string, config AC
 
 	provider, err := config.DNSProvider()
 	if err != nil {
-		return certmagic.Certificate{}, fmt.Errorf("dns provider could not be loaded: %w", err)
+		return nil, fmt.Errorf("dns provider could not be loaded: %w", err)
 	}
 	certmagic.DefaultACME.DNS01Solver = &certmagic.DNS01Solver{DNSManager: certmagic.DNSManager{
 		Resolvers:   config.Resolvers,
@@ -254,11 +271,7 @@ func (c cmd) ensureACMECertificate(ctx context.Context, domain string, config AC
 		}),
 	}
 
-	err = magic.ManageSync(ctx, []string{domain})
-	if err != nil {
-		return certmagic.Certificate{}, err
-	}
-	return magic.CacheManagedCertificate(ctx, domain)
+	return magic, nil
 }
 
 func (c cmd) removeExpiredCerts(ctx context.Context, client *scale.Client, domain string, activeCert *scale.Certificate) error {
