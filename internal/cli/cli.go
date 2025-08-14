@@ -117,10 +117,10 @@ func (c cmd) Run(ctx context.Context) error {
 
 	config, err := c.loadConfig(*flagConfigPath)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to load config from %s: %w", *flagConfigPath, err)
 	}
 	if config == nil { // if no config existed
-		return nil
+		return fmt.Errorf(" config found at %s", *flagConfigPath)
 	}
 
 	httpClient := &http.Client{
@@ -132,7 +132,7 @@ func (c cmd) Run(ctx context.Context) error {
 
 	u, err := url.Parse(config.Scale.URL)
 	if err != nil {
-		return err
+		return fmt.Errorf("error parsing scale url %q: %w", config.Scale.URL, err)
 	}
 
 	scaleClient := scale.NewClient(
@@ -143,7 +143,7 @@ func (c cmd) Run(ctx context.Context) error {
 
 	acmeClient, err := c.acmeClient(config.ACME)
 	if err != nil {
-		return err
+		return fmt.Errorf("error creating ACME client: %w", err)
 	}
 
 	if *flagDaemon {
@@ -183,7 +183,7 @@ func (c cmd) ensureCertificate(ctx context.Context, cfg *Config, acmeClient *cer
 
 	activeCert, err := c.ensureUICertificate(ctx, scaleClient, currentCert)
 	if err != nil {
-		return err
+		return fmt.Errorf("error ensuring ui certificate for %s: %w", cfg.Domain, err)
 	}
 
 	return c.removeExpiredCerts(ctx, scaleClient, cfg.Domain, activeCert)
