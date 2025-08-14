@@ -212,26 +212,25 @@ func (c cmd) ensureUICertificate(ctx context.Context, client *scale.Client, curr
 		return nil, err
 	}
 
-	if !activeCertTLS.Leaf.Equal(currentCert.Leaf) {
-		name := fmt.Sprintf("acme-%s", time.Now().Format("20060102-150405"))
-		c.ScaleLogger.Info("importing certificate", zap.String("name", name), zap.Strings("san", currentCert.Leaf.DNSNames))
-		certImport, err := client.CertificateImport(ctx, name, currentCert.Certificate)
-		if err != nil {
-			return activeCert, err
-		}
-
-		err = client.SystemGeneralUpdate(ctx, scale.SystemGeneralUpdateParams{UICertificate: certImport.ID})
-		if err != nil {
-			return activeCert, err
-		}
-		c.ScaleLogger.Info("ui certificate updated")
-
-		activeCert = certImport
-	} else {
+	if activeCertTLS.Leaf.Equal(currentCert.Leaf) {
 		c.ScaleLogger.Info("ui certificate up to date")
+		return activeCert, nil
 	}
 
-	return activeCert, nil
+	name := fmt.Sprintf("acme-%s", time.Now().Format("20060102-150405"))
+	c.ScaleLogger.Info("importing certificate", zap.String("name", name), zap.Strings("san", currentCert.Leaf.DNSNames))
+	certImport, err := client.CertificateImport(ctx, name, currentCert.Certificate)
+	if err != nil {
+		return activeCert, err
+	}
+
+	err = client.SystemGeneralUpdate(ctx, scale.SystemGeneralUpdateParams{UICertificate: certImport.ID})
+	if err != nil {
+		return activeCert, err
+	}
+	c.ScaleLogger.Info("ui certificate updated")
+
+	return certImport, nil
 }
 
 func (c cmd) acmeClient(config ACMEConfig) (*certmagic.Config, error) {
