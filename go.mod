@@ -8,7 +8,7 @@ require (
 	github.com/caddyserver/certmagic v0.25.0
 	github.com/caddyserver/zerossl v0.1.3
 	github.com/google/go-querystring v1.1.0
-	github.com/klauspost/compress v1.18.0
+	github.com/klauspost/compress v1.18.1
 	github.com/libdns/acmedns v0.5.0
 	github.com/libdns/cloudflare v0.2.1
 	github.com/mattn/go-isatty v0.0.20
