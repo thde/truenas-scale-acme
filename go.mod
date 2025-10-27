@@ -10,7 +10,7 @@ require (
 	github.com/google/go-querystring v1.1.0
 	github.com/klauspost/compress v1.18.1
 	github.com/libdns/acmedns v0.5.0
-	github.com/libdns/cloudflare v0.2.1
+	github.com/libdns/cloudflare v0.2.2
 	github.com/mattn/go-isatty v0.0.20
 	github.com/mholt/acmez/v3 v3.1.4
 	github.com/robfig/cron/v3 v3.0.1
