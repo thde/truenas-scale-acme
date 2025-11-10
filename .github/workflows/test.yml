@@ -51,7 +51,7 @@ jobs:
       - uses: dominikh/staticcheck-action@v1
         with:
           install-go: false
-      - uses: golangci/golangci-lint-action@v8
+      - uses: golangci/golangci-lint-action@v9
         with:
           version: latest
       - uses: golang/govulncheck-action@v1
