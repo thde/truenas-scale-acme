@@ -21,13 +21,13 @@ type Job struct {
 	Abortable    bool     `json:"abortable,omitempty"`
 	LogsPath     any      `json:"logs_path,omitempty"`
 	LogsExcerpt  any      `json:"logs_excerpt,omitempty"`
-	Progress     Progress `json:"progress,omitempty"`
+	Progress     Progress `json:"progress,omitzero"`
 	Result       any      `json:"result,omitempty"`
 	Error        string   `json:"error,omitempty"`
 	Exception    string   `json:"exception,omitempty"`
 	State        string   `json:"state,omitempty"`
-	TimeStarted  Date     `json:"time_started,omitempty"`
-	TimeFinished Date     `json:"time_finished,omitempty"`
+	TimeStarted  Date     `json:"time_started,omitzero"`
+	TimeFinished Date     `json:"time_finished,omitzero"`
 }
 
 type Progress struct {
@@ -50,7 +50,7 @@ func (t *Timestamp) UnmarshalJSON(data []byte) error {
 }
 
 type Date struct {
-	Date Timestamp `json:"$date,omitempty"`
+	Date Timestamp `json:"$date"`
 }
 
 type JobsParams struct {

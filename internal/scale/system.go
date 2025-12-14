@@ -12,7 +12,7 @@ type SystemGeneral struct {
 	ID                   int         `json:"id,omitempty"`
 	Language             string      `json:"language,omitempty"`
 	KDBMap               string      `json:"kbdmap,omitempty"`
-	Birthday             Date        `json:"birthday,omitempty"`
+	Birthday             Date        `json:"birthday,omitzero"`
 	Timezone             string      `json:"timezone,omitempty"`
 	Wizardshown          bool        `json:"wizardshown,omitempty"`
 	CrashReporting       bool        `json:"crash_reporting,omitempty"`
@@ -27,7 +27,7 @@ type SystemGeneral struct {
 	UIHttpsprotocols     []string    `json:"ui_httpsprotocols,omitempty"`
 	UIXFrameOptions      string      `json:"ui_x_frame_options,omitempty"`
 	UIConsolemsg         bool        `json:"ui_consolemsg,omitempty"`
-	UICertificate        Certificate `json:"ui_certificate,omitempty"`
+	UICertificate        Certificate `json:"ui_certificate,omitzero"`
 	CrashReportingIsSet  bool        `json:"crash_reporting_is_set,omitempty"`
 	UsageCollectionIsSet bool        `json:"usage_collection_is_set,omitempty"`
 }
