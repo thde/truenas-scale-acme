@@ -69,8 +69,8 @@ type Certificate struct {
 	SubjectNameHash    int64    `json:"subject_name_hash,omitempty"`
 	DigestAlgorithm    string   `json:"digest_algorithm,omitempty"`
 	Lifetime           int      `json:"lifetime,omitempty"`
-	From               Time     `json:"from,omitempty"`
-	Until              Time     `json:"until,omitempty"`
+	From               Time     `json:"from,omitzero"`
+	Until              Time     `json:"until,omitzero"`
 	Serial             *big.Int `json:"serial,omitempty"`
 	Chain              bool     `json:"chain,omitempty"`
 	Fingerprint        string   `json:"fingerprint,omitempty"`
