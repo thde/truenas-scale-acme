@@ -5,8 +5,8 @@ go 1.24.0
 toolchain go1.24.1
 
 require (
-	github.com/caddyserver/certmagic v0.25.0
-	github.com/caddyserver/zerossl v0.1.3
+	github.com/caddyserver/certmagic v0.25.1
+	github.com/caddyserver/zerossl v0.1.4
 	github.com/google/go-querystring v1.2.0
 	github.com/klauspost/compress v1.18.2
 	github.com/libdns/acmedns v0.5.0
