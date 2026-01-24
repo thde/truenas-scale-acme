@@ -188,7 +188,7 @@ func (c cmd) ensureCertificate(ctx context.Context, cfg *Config, acmeClient *cer
 }
 
 func (c cmd) ensureACMECertificate(ctx context.Context, domain string, acmeClient *certmagic.Config) (certmagic.Certificate, error) {
-	if err := acmeClient.ManageSync(ctx, []string{domain}); err != nil {
+	if err := acmeClient.ManageAsync(ctx, []string{domain}); err != nil {
 		return certmagic.Certificate{}, fmt.Errorf("error ensuring certificate for %q: %w", domain, err)
 	}
 	currentCert, err := acmeClient.CacheManagedCertificate(ctx, domain)
