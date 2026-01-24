@@ -13,11 +13,9 @@ import (
 	"github.com/klauspost/compress/gzhttp"
 	"github.com/libdns/acmedns"
 	"github.com/libdns/cloudflare"
-	"github.com/mholt/acmez/v3/acme"
 	flag "github.com/spf13/pflag"
 	"github.com/thde/truenas-scale-acme/internal/cron"
 	"github.com/thde/truenas-scale-acme/internal/scale"
-	"github.com/thde/truenas-scale-acme/internal/zerossl"
 	"go.uber.org/zap"
 )
 
@@ -255,18 +253,6 @@ func (c cmd) acmeClient(config ACMEConfig) (*certmagic.Config, error) {
 		certmagic.NewACMEIssuer(magic, certmagic.ACMEIssuer{
 			CA:     certmagic.LetsEncryptProductionCA,
 			TestCA: certmagic.LetsEncryptStagingCA,
-		}),
-		// ZeroSSL requires EAB
-		certmagic.NewACMEIssuer(magic, certmagic.ACMEIssuer{
-			CA: certmagic.ZeroSSLProductionCA,
-			NewAccountFunc: func(ctx context.Context, issuer *certmagic.ACMEIssuer, account acme.Account) (acme.Account, error) {
-				if issuer.ExternalAccount != nil {
-					return account, nil
-				}
-				credentials, account, err := zerossl.EABCredentials(ctx, config.Email, account)
-				issuer.ExternalAccount = credentials
-				return account, err
-			},
 		}),
 	}
 
