@@ -105,7 +105,7 @@ func (c *Client) Certificates(ctx context.Context) ([]Certificate, error) {
 	return certificates, err
 }
 
-// Certificates returns a list of certificates.
+// Certificate returns a list of certificates.
 func (c *Client) Certificate(ctx context.Context, id int) (*Certificate, error) {
 	req, err := c.newRequest(ctx, http.MethodGet, fmt.Sprintf("certificate/id/%d", id), nil, nil)
 	if err != nil {

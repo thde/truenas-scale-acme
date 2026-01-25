@@ -55,7 +55,7 @@ func NewTicker(schedule string) (Ticker, error) {
 	return NewTickerWithLocation(schedule, time.UTC)
 }
 
-// NewTicker returns a Ticker based on a pre-defined time zone.
+// NewTickerWithLocation returns a Ticker based on a pre-defined time zone.
 // You can check the ticker channel for the next tick by `Ticker.C`.
 func NewTickerWithLocation(schedule string, loc *time.Location) (Ticker, error) {
 	var cronTicker Ticker

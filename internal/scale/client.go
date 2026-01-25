@@ -1,3 +1,4 @@
+// Package scale provides a client for interacting with the TrueNAS Scale API.
 package scale
 
 import (
