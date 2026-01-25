@@ -70,7 +70,9 @@ curl -L $(curl -s https://api.github.com/repos/thde/truenas-scale-acme/releases/
 `truenas-scale-acme` currently has the following CA's configured by default:
 
 1. Let's Encrypt
+2. ZeroSSL
 
+This ensures a valid certificate even if one CA is unavailable.
 
 ## Other Solutions
 
