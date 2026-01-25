@@ -1,3 +1,5 @@
+// Package zerossl provides functions for interacting with the ZeroSSL API,
+// specifically for obtaining EAB credentials for ACME.
 package zerossl
 
 import (
