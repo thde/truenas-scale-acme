@@ -1,3 +1,5 @@
+// Package cli provides the command-line interface and core logic for the
+// TrueNAS SCALE ACME certificate automation tool.
 package cli
 
 import (
