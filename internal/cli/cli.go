@@ -160,6 +160,17 @@ func (c cmd) Run(ctx context.Context) error {
 		return nil
 	}
 
+	acmeClient.OnEvent = func(ctx context.Context, event string, data map[string]any) error {
+		c.CLILogger.Info("ACME event", zap.String("event", event))
+
+		switch event {
+		case "cert_obtained":
+			return c.ensureCertificate(ctx, config, acmeClient, scaleClient)
+		default:
+			return nil
+		}
+	}
+
 	ticker, err := cron.NewTickerWithLocation(*flagSchedule, time.Local)
 	if err != nil {
 		return fmt.Errorf("error parsing schedule %s: %w", *flagSchedule, err)
@@ -193,7 +204,7 @@ func (c cmd) ensureCertificate(ctx context.Context, cfg *Config, acmeClient *cer
 }
 
 func (c cmd) ensureACMECertificate(ctx context.Context, domain string, acmeClient *certmagic.Config) (certmagic.Certificate, error) {
-	if err := acmeClient.ManageSync(ctx, []string{domain}); err != nil {
+	if err := acmeClient.ManageAsync(ctx, []string{domain}); err != nil {
 		return certmagic.Certificate{}, fmt.Errorf("error ensuring certificate for %q: %w", domain, err)
 	}
 	currentCert, err := acmeClient.CacheManagedCertificate(ctx, domain)
