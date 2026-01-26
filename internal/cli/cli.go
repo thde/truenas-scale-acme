@@ -122,7 +122,7 @@ func (c cmd) Run(ctx context.Context) error {
 		return fmt.Errorf("failed to load config from %s: %w", *flagConfigPath, err)
 	}
 	if config == nil { // if no config existed
-		return fmt.Errorf(" config found at %s", *flagConfigPath)
+		return fmt.Errorf("no config found at %s", *flagConfigPath)
 	}
 
 	httpClient := &http.Client{
@@ -167,8 +167,7 @@ func (c cmd) Run(ctx context.Context) error {
 	defer ticker.Stop()
 
 	for range ticker.C {
-		err = c.ensureCertificate(ctx, config, acmeClient, scaleClient)
-		if err != nil {
+		if err = c.ensureCertificate(ctx, config, acmeClient, scaleClient); err != nil {
 			return err
 		}
 	}
@@ -177,10 +176,12 @@ func (c cmd) Run(ctx context.Context) error {
 }
 
 func (c cmd) ensureCertificate(ctx context.Context, cfg *Config, acmeClient *certmagic.Config, scaleClient *scale.Client) error {
-	c.CertLogger.Info("ensure valid certificate is present")
+	c.CLILogger.Info("ensure valid certificate is present")
 	currentCert, err := c.ensureACMECertificate(ctx, cfg.Domain, acmeClient)
 	if err != nil {
-		return err
+		c.CLILogger.Warn("error ensuring certificate, skipping update...", zap.Error(err))
+
+		return nil
 	}
 
 	activeCert, err := c.ensureUICertificate(ctx, scaleClient, currentCert)
@@ -192,7 +193,7 @@ func (c cmd) ensureCertificate(ctx context.Context, cfg *Config, acmeClient *cer
 }
 
 func (c cmd) ensureACMECertificate(ctx context.Context, domain string, acmeClient *certmagic.Config) (certmagic.Certificate, error) {
-	if err := acmeClient.ManageAsync(ctx, []string{domain}); err != nil {
+	if err := acmeClient.ManageSync(ctx, []string{domain}); err != nil {
 		return certmagic.Certificate{}, fmt.Errorf("error ensuring certificate for %q: %w", domain, err)
 	}
 	currentCert, err := acmeClient.CacheManagedCertificate(ctx, domain)
