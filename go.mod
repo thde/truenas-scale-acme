@@ -5,8 +5,8 @@ go 1.26.0
 require (
 	github.com/caddyserver/certmagic v0.25.3
 	github.com/caddyserver/zerossl v0.1.5
-	github.com/google/go-querystring v1.2.0
-	github.com/klauspost/compress v1.18.6
+	github.com/filecoin-project/go-jsonrpc v0.10.1
+	github.com/gorilla/websocket v1.5.3
 	github.com/libdns/acmedns v0.5.0
 	github.com/libdns/cloudflare v0.2.2
 	github.com/mattn/go-isatty v0.0.22
@@ -17,10 +17,14 @@ require (
 )
 
 require (
+	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
+	github.com/google/uuid v1.6.0 // indirect
+	github.com/ipfs/go-log/v2 v2.9.1 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/libdns/libdns v1.1.1 // indirect
 	github.com/miekg/dns v1.1.72 // indirect
 	github.com/zeebo/blake3 v0.2.4 // indirect
+	go.opencensus.io v0.24.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap/exp v0.3.0 // indirect
 	golang.org/x/crypto v0.50.0 // indirect
@@ -30,4 +34,5 @@ require (
 	golang.org/x/sys v0.43.0 // indirect
 	golang.org/x/text v0.36.0 // indirect
 	golang.org/x/tools v0.44.0 // indirect
+	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
 )

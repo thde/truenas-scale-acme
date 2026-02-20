@@ -6,19 +6,17 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"net/http"
 	"net/url"
 	"os"
 	"time"
 
 	"github.com/caddyserver/certmagic"
-	"github.com/klauspost/compress/gzhttp"
 	"github.com/libdns/acmedns"
 	"github.com/libdns/cloudflare"
 	"github.com/mholt/acmez/v3/acme"
 	flag "github.com/spf13/pflag"
 	"github.com/thde/truenas-scale-acme/internal/cron"
-	"github.com/thde/truenas-scale-acme/internal/scale"
+	"github.com/thde/truenas-scale-acme/internal/truenas"
 	"github.com/thde/truenas-scale-acme/internal/zerossl"
 	"go.uber.org/zap"
 )
@@ -31,15 +29,16 @@ var (
 	flagVersion    = flag.BoolP("version", "v", false, "Print version information")
 )
 
+const (
+	defaultURL = "ws://localhost/api/current"
+)
+
 var (
 	defaultResolvers = []string{
 		"9.9.9.9", "149.112.112.112", "2620:fe::fe", "2620:fe::9", // quad9
 		"86.54.11.100", "86.54.11.200", "2a13:1001::86:54:11:100", "2a13:1001::86:54:11:200", // dns4eu
 	}
 	defaultConfig = Config{
-		Scale: ScaleConfig{
-			URL: "http://localhost/api/v2.0/",
-		},
 		ACME: ACMEConfig{
 			Resolvers: defaultResolvers,
 			Storage:   defaultDataDir(),
@@ -47,9 +46,9 @@ var (
 	}
 	exampleConfig = Config{
 		Domain: "nas.domain.local",
-		Scale: ScaleConfig{
+		API: &APIConfig{
 			APIKey:     "s3cure",
-			URL:        "http://localhost/api/v2.0/",
+			URL:        defaultURL,
 			SkipVerify: false,
 		},
 		ACME: ACMEConfig{
@@ -125,23 +124,23 @@ func (c cmd) Run(ctx context.Context) error {
 		return fmt.Errorf("no config found at %s", *flagConfigPath)
 	}
 
-	httpClient := &http.Client{
-		Timeout: 30 * time.Second,
-		Transport: gzhttp.Transport(&http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: config.Scale.SkipVerify}, //nolint: gosec
-		}),
-	}
-
-	u, err := url.Parse(config.Scale.URL)
+	u, err := url.Parse(config.API.URL)
 	if err != nil {
-		return fmt.Errorf("error parsing scale url %q: %w", config.Scale.URL, err)
+		return fmt.Errorf("error parsing api url %q: %w", config.API.URL, err)
 	}
 
-	scaleClient := scale.NewClient(
-		scale.WithAPIKey(config.Scale.APIKey),
-		scale.WithBaseURL(u),
-		scale.WithHTTPClient(httpClient),
-	)
+	dialOpts := []truenas.Option{
+		truenas.WithURL(u),
+	}
+	if config.API.SkipVerify {
+		dialOpts = append(dialOpts, truenas.WithTLSConfig(&tls.Config{InsecureSkipVerify: true})) //nolint: gosec
+	}
+
+	tnClient, err := truenas.Dial(ctx, config.API.APIKey, dialOpts...)
+	if err != nil {
+		return fmt.Errorf("error connecting to TrueNAS: %w", err)
+	}
+	defer tnClient.Close()
 
 	acmeClient, err := c.acmeClient(config.ACME)
 	if err != nil {
@@ -152,7 +151,7 @@ func (c cmd) Run(ctx context.Context) error {
 		c.CLILogger.Info("daemon mode enabled", zap.String("schedule", *flagSchedule))
 	}
 
-	err = c.ensureCertificate(ctx, config, acmeClient, scaleClient)
+	err = c.ensureCertificate(ctx, config, acmeClient, tnClient)
 	if err != nil {
 		return err
 	}
@@ -165,7 +164,7 @@ func (c cmd) Run(ctx context.Context) error {
 
 		switch event {
 		case "cert_obtained":
-			return c.ensureCertificate(ctx, config, acmeClient, scaleClient)
+			return c.ensureCertificate(ctx, config, acmeClient, tnClient)
 		default:
 			return nil
 		}
@@ -178,7 +177,7 @@ func (c cmd) Run(ctx context.Context) error {
 	defer ticker.Stop()
 
 	for range ticker.C {
-		if err = c.ensureCertificate(ctx, config, acmeClient, scaleClient); err != nil {
+		if err = c.ensureCertificate(ctx, config, acmeClient, tnClient); err != nil {
 			return err
 		}
 	}
@@ -186,7 +185,7 @@ func (c cmd) Run(ctx context.Context) error {
 	return nil
 }
 
-func (c cmd) ensureCertificate(ctx context.Context, cfg *Config, acmeClient *certmagic.Config, scaleClient *scale.Client) error {
+func (c cmd) ensureCertificate(ctx context.Context, cfg *Config, acmeClient *certmagic.Config, tnClient *truenas.Client) error {
 	c.CLILogger.Info("ensure valid certificate is present")
 	currentCert, err := c.ensureACMECertificate(ctx, cfg.Domain, acmeClient)
 	if err != nil {
@@ -195,12 +194,12 @@ func (c cmd) ensureCertificate(ctx context.Context, cfg *Config, acmeClient *cer
 		return nil
 	}
 
-	activeCert, err := c.ensureUICertificate(ctx, scaleClient, currentCert)
+	activeCert, err := c.ensureUICertificate(ctx, tnClient, currentCert)
 	if err != nil {
 		return fmt.Errorf("error ensuring ui certificate for %s: %w", cfg.Domain, err)
 	}
 
-	return c.removeExpiredCerts(ctx, scaleClient, cfg.Domain, activeCert)
+	return c.removeExpiredCerts(ctx, tnClient, cfg.Domain, activeCert)
 }
 
 func (c cmd) ensureACMECertificate(ctx context.Context, domain string, acmeClient *certmagic.Config) (certmagic.Certificate, error) {
@@ -215,32 +214,37 @@ func (c cmd) ensureACMECertificate(ctx context.Context, domain string, acmeClien
 	return currentCert, nil
 }
 
-func (c cmd) ensureUICertificate(ctx context.Context, client *scale.Client, currentCert certmagic.Certificate) (*scale.Certificate, error) {
-	settings, err := client.SystemGeneral(ctx)
-	if err != nil {
-		return nil, err
-	}
-	activeCert := &settings.UICertificate
-	activeCertTLS, err := activeCert.TLSCertificate()
+func (c cmd) ensureUICertificate(ctx context.Context, client *truenas.Client, currentCert certmagic.Certificate) (*truenas.Certificate, error) {
+	settings, err := client.SystemGeneralConfig(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	if activeCertTLS.Leaf.Equal(currentCert.Leaf) {
-		c.ScaleLogger.Info("ui certificate up to date")
-		return activeCert, nil
+	if settings.UICertificate == nil {
+		c.ScaleLogger.Info("no ui certificate configured, importing new one")
+	} else {
+		activeCert := settings.UICertificate
+		activeCertTLS, err := activeCert.TLSCertificate()
+		if err != nil {
+			return nil, err
+		}
+
+		if activeCertTLS.Leaf.Equal(currentCert.Leaf) {
+			c.ScaleLogger.Info("ui certificate up to date")
+			return activeCert, nil
+		}
 	}
 
 	name := fmt.Sprintf("acme-%s", time.Now().Format("20060102-150405"))
 	c.ScaleLogger.Info("importing certificate", zap.String("name", name), zap.Strings("san", currentCert.Leaf.DNSNames))
 	certImport, err := client.CertificateImport(ctx, name, currentCert.Certificate)
 	if err != nil {
-		return activeCert, err
+		return settings.UICertificate, err
 	}
 
-	err = client.SystemGeneralUpdate(ctx, scale.SystemGeneralUpdateParams{UICertificate: certImport.ID})
+	err = client.SystemGeneralUpdate(ctx, truenas.SystemGeneralUpdateParams{UICertificate: &certImport.ID})
 	if err != nil {
-		return activeCert, err
+		return settings.UICertificate, err
 	}
 	c.ScaleLogger.Info("ui certificate updated")
 
@@ -287,7 +291,7 @@ func (c cmd) acmeClient(config ACMEConfig) (*certmagic.Config, error) {
 	return magic, nil
 }
 
-func (c cmd) removeExpiredCerts(ctx context.Context, client *scale.Client, domain string, activeCert *scale.Certificate) error {
+func (c cmd) removeExpiredCerts(ctx context.Context, client *truenas.Client, domain string, activeCert *truenas.Certificate) error {
 	certs, err := client.Certificates(ctx)
 	if err != nil {
 		return err
@@ -300,7 +304,7 @@ func (c cmd) removeExpiredCerts(ctx context.Context, client *scale.Client, domai
 		if !cert.Expired {
 			continue
 		}
-		if cert.ID == activeCert.ID {
+		if activeCert != nil && cert.ID == activeCert.ID {
 			continue
 		}
 
