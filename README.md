@@ -17,13 +17,6 @@ If you require a different provider, feel free to create an issue. In theory, al
 
 ## Install
 
-### Homebrew
-
-```shell
-brew tap thde/truenas-scale-acme
-brew install thde/truenas-scale-acme/truenas-scale-acme
-```
-
 ### curl
 
 ```shell
