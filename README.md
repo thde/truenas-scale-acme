@@ -15,48 +15,80 @@ Currently the following providers are supported:
 
 If you require a different provider, feel free to create an issue. In theory, all [github.com/libdns](https://github.com/orgs/libdns/repositories?q=&type=all&language=&sort=stargazers) providers can be supported.
 
-## Install
-
-### curl
-
-```shell
-mkdir truenas-scale-acme
-curl -L $(curl -s https://api.github.com/repos/thde/truenas-scale-acme/releases/latest |
-    jq -r '.assets[].browser_download_url | select(contains ("linux_amd64"))') |
-    tar xvz -C ./truenas-scale-acme
-```
-
 ## Getting Started
 
-1. [Create](https://www.truenas.com/docs/scale/scaletutorials/toptoolbar/managingapikeys/) an API key in TrueNAS
-1. Register an account on ACME-DNS server:
+The easiest way is to run `truenas-scale-acme` directly in TrueNAS as an App:
+
+1. [Create](https://www.truenas.com/docs/scale/scaletutorials/toptoolbar/managingapikeys/) an API key in TrueNAS.
+
+1. Register an account on the ACME-DNS server:
    ```shell
    curl -X POST https://auth.acme-dns.io/register
    ```
-1. Create a DNS CNAME record that points from `_acme-challenge.your-domain.example.com` to the `fulldomain` from the registration response.
-1. Use the credentials obtained in step 1 and 2 to configure truenas-scale-acme (default `~/.config/truenas-scale-acme/config.json`):
+
+1. Create a DNS CNAME record pointing from `_acme-challenge.nas.your-domain.com` to the `fulldomain` from the registration response.
+
+1. Create a config directory and ensure the `apps` user has permissions:
+   ```shell
+   sudo mkdir -p /mnt/tank/acme/certificates
+   sudo touch /mnt/tank/acme/config.json
+   sudo chmod -R 700 /mnt/tank/acme
+   sudo chmod 600 /mnt/tank/acme/config.json
+   sudo chown -R apps:apps /mnt/tank/acme/config.json
+   ```
+
+1. Update `/mnt/tank/acme/config.json` with the credentials from steps 1 and 2:
    ```json
    {
-     "domain": "nas.domain.com",
+     "domain": "nas.your-domain.com",
      "scale": {
-       "api_key": "s3cure",
-       "url": "https://localhost/api/v2.0/",
+       "api_key": "your-truenas-api-key",
+       "url": "https://172.16.0.1/api/v2.0/",
        "skip_verify": true
      },
      "acme": {
-       "email": "myemail@example.com",
+       "email": "acme@example.com",
        "tos_agreed": true,
        "acme-dns": {
          "username": "00000000-0000-0000-0000-000000000000",
-         "password": "s3cure",
+         "password": "your-acme-dns-password",
          "subdomain": "FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF",
          "server_url": "https://auth.acme-dns.io"
        }
      }
    }
    ```
-1. Run `truenas-acme-scale` and verify that the certificate is issued and updated successfully.
-1. Setup a cronjob that runs `truenas-acme-scale` daily as the correct user.
+
+1. Add as a custom app in TrueNAS Scale using the following compose, adjusting `source` paths, `user`, and `TZ`:
+   ```yaml
+   services:
+     truenas-scale-acme:
+       command:
+         - '--daemon'
+         - '--schedule'
+         - 11 11 * * *
+         - '--config'
+         - /etc/truenas-scale-acme/config.json
+       environment:
+         TZ: Europe/Zurich
+         XDG_DATA_HOME: /var
+       group_add:
+         - 568
+       healthcheck:
+         disable: true
+       image: ghcr.io/thde/truenas-scale-acme:latest
+       pull_policy: always
+       restart: on-failure:10
+       user: '3001:3001'
+       volumes:
+         - type: bind
+           source: /mnt/tank/acme/config.json
+           target: /etc/truenas-scale-acme/config.json
+           read_only: true
+         - type: bind
+           source: /mnt/tank/acme/certificates
+           target: /var/truenas-scale-acme
+   ```
 
 ## CA's
 
