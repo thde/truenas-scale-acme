@@ -16,7 +16,7 @@ import (
 	"go.uber.org/zap"
 )
 
-type ScaleConfig struct {
+type APIConfig struct {
 	APIKey     string `json:"api_key"`
 	URL        string `json:"url"`
 	SkipVerify bool   `json:"skip_verify"`
@@ -42,9 +42,13 @@ func (ac *ACMEConfig) DNSProvider() (certmagic.DNSProvider, error) {
 }
 
 type Config struct {
-	Domain string      `json:"domain"`
-	Scale  ScaleConfig `json:"scale"`
-	ACME   ACMEConfig  `json:"acme"`
+	Domain string `json:"domain"`
+	// API is the configuration for the TrueNAS JSONRPC 2.0 WebSocket API.
+	API *APIConfig `json:"api"`
+	// Scale is the configuration for the TrueNAS SCALE REST API.
+	// Deprecated: Use [Config.API] instead.
+	Scale *APIConfig `json:"scale"`
+	ACME  ACMEConfig `json:"acme"`
 }
 
 func defaultConfigPath() string {
@@ -72,7 +76,57 @@ func defaultDataDir() string {
 }
 
 func (c *Config) Merge(r io.Reader) error {
-	return json.NewDecoder(r).Decode(c)
+	data, err := io.ReadAll(r)
+	if err != nil {
+		return err
+	}
+
+	var cf Config
+	if err := json.Unmarshal(data, &cf); err != nil {
+		return err
+	}
+
+	if cf.Domain != "" {
+		c.Domain = cf.Domain
+	}
+
+	if cf.API != nil {
+		if c.API == nil {
+			c.API = &APIConfig{}
+		}
+		if cf.API.APIKey != "" {
+			c.API.APIKey = cf.API.APIKey
+		}
+		if cf.API.URL != "" {
+			c.API.URL = cf.API.URL
+		}
+		c.API.SkipVerify = cf.API.SkipVerify
+	}
+
+	if cf.Scale != nil {
+		c.Scale = cf.Scale
+	}
+
+	if cf.ACME.Email != "" {
+		c.ACME.Email = cf.ACME.Email
+	}
+	if cf.ACME.TOSAgreed {
+		c.ACME.TOSAgreed = cf.ACME.TOSAgreed
+	}
+	if len(cf.ACME.Resolvers) > 0 {
+		c.ACME.Resolvers = cf.ACME.Resolvers
+	}
+	if cf.ACME.Storage != "" {
+		c.ACME.Storage = cf.ACME.Storage
+	}
+	if cf.ACME.ACMEDNS != nil {
+		c.ACME.ACMEDNS = cf.ACME.ACMEDNS
+	}
+	if cf.ACME.Cloudflare != nil {
+		c.ACME.Cloudflare = cf.ACME.Cloudflare
+	}
+
+	return nil
 }
 
 func (c *Config) Write(w io.Writer) error {
@@ -85,16 +139,18 @@ func (c *Config) Valid() error {
 	errs := []error{}
 
 	if c.Domain == "" {
-		errs = append(errs, fmt.Errorf("no domain specified: '%s'", c.Scale.APIKey))
+		errs = append(errs, fmt.Errorf("no domain specified"))
 	}
 
-	if c.Scale.APIKey == "" {
-		errs = append(errs, fmt.Errorf("no scale.api_key specified: '%s'", c.Scale.APIKey))
-	}
-
-	_, err := url.Parse(c.Scale.URL)
-	if err != nil {
-		errs = append(errs, fmt.Errorf("invalid scale.url: %w", err))
+	if c.API == nil {
+		errs = append(errs, fmt.Errorf("no api config specified"))
+	} else {
+		if c.API.APIKey == "" {
+			errs = append(errs, fmt.Errorf("no api.api_key specified"))
+		}
+		if _, err := url.Parse(c.API.URL); err != nil {
+			errs = append(errs, fmt.Errorf("invalid api.url: %w", err))
+		}
 	}
 
 	for _, resolver := range c.ACME.Resolvers {
@@ -104,10 +160,10 @@ func (c *Config) Valid() error {
 	}
 
 	if c.ACME.Email == "" {
-		errs = append(errs, fmt.Errorf("no acme.email specified: '%s'", c.Scale.APIKey))
+		errs = append(errs, fmt.Errorf("no acme.email specified"))
 	}
 
-	if _, err = c.ACME.DNSProvider(); err != nil {
+	if _, err := c.ACME.DNSProvider(); err != nil {
 		errs = append(errs, err)
 	}
 
@@ -155,5 +211,36 @@ func (c cmd) loadConfig(path string) (*Config, error) {
 		return nil, err
 	}
 
+	config = c.handleDeprecatedConfig(config)
+
 	return &config, config.Valid()
+}
+
+func (c cmd) handleDeprecatedConfig(conf Config) Config {
+	if conf.API == nil && conf.Scale != nil {
+		c.CLILogger.Warn("config is using deprecated scale fields", zap.String("domain", conf.Domain))
+		apiURL := defaultURL
+		if conf.Scale.URL != "" {
+			old, err := url.Parse(conf.Scale.URL)
+			if err != nil {
+				c.CLILogger.Error("invalid scale.url", zap.String("url", conf.Scale.URL), zap.Error(err))
+			} else {
+				newURL, err := url.Parse(defaultURL)
+				if err != nil {
+					c.CLILogger.Error("parsing default url", zap.String("url", defaultURL), zap.Error(err))
+				} else {
+					newURL.Host = old.Host
+					apiURL = newURL.String()
+				}
+			}
+		}
+		conf.API = &APIConfig{
+			APIKey:     conf.Scale.APIKey,
+			URL:        apiURL,
+			SkipVerify: conf.Scale.SkipVerify,
+		}
+		conf.Scale = nil
+	}
+
+	return conf
 }
