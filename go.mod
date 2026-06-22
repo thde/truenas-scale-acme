@@ -3,7 +3,7 @@ module github.com/thde/truenas-scale-acme
 go 1.26.0
 
 require (
-	github.com/caddyserver/certmagic v0.25.3
+	github.com/caddyserver/certmagic v0.25.4
 	github.com/caddyserver/zerossl v0.1.5
 	github.com/filecoin-project/go-jsonrpc v0.10.1
 	github.com/gorilla/websocket v1.5.3
