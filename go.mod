@@ -9,7 +9,7 @@ require (
 	github.com/gorilla/websocket v1.5.3
 	github.com/libdns/acmedns v0.5.0
 	github.com/libdns/cloudflare v0.2.2
-	github.com/mattn/go-isatty v0.0.22
+	github.com/mattn/go-isatty v0.0.23
 	github.com/mholt/acmez/v3 v3.1.6
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/spf13/pflag v1.0.10
