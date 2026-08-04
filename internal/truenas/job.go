@@ -2,6 +2,7 @@ package truenas
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 )
@@ -10,6 +11,12 @@ const (
 	jobPollInterval = 500 * time.Millisecond
 	jobWaitTimeout  = 60 * time.Second
 )
+
+// errJobNotFound is returned when core.get_jobs has no entry for a job ID.
+var errJobNotFound = errors.New("job not found")
+
+// errJobFailed is returned when a job reaches a non-successful terminal state.
+var errJobFailed = errors.New("job failed")
 
 // Job represents a TrueNAS background job as returned by core.get_jobs.
 // Methods decorated as jobs return a job ID rather than their result; the
@@ -38,7 +45,7 @@ func (c *Client) getJob(ctx context.Context, id int) (*Job, error) {
 		return nil, err
 	}
 	if len(jobs) == 0 {
-		return nil, fmt.Errorf("job %d not found", id)
+		return nil, fmt.Errorf("%w: %d", errJobNotFound, id)
 	}
 	return &jobs[0], nil
 }
@@ -46,7 +53,7 @@ func (c *Client) getJob(ctx context.Context, id int) (*Job, error) {
 // waitForJob polls core.get_jobs until the job reaches a terminal state.
 // It returns an error if the job fails or is aborted, or if the context is
 // cancelled or jobWaitTimeout elapses.
-func (c *Client) waitForJob(ctx context.Context, id int) (*Job, error) {
+func (c *Client) waitForJob(ctx context.Context, id int) error {
 	ctx, cancel := context.WithTimeout(ctx, jobWaitTimeout)
 	defer cancel()
 
@@ -56,19 +63,19 @@ func (c *Client) waitForJob(ctx context.Context, id int) (*Job, error) {
 	for {
 		job, err := c.getJob(ctx, id)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
 		switch job.State {
 		case "SUCCESS":
-			return job, nil
+			return nil
 		case "FAILED", "ABORTED":
-			return nil, fmt.Errorf("job %d %s: %s", id, job.State, job.Error)
+			return fmt.Errorf("%w: job %d %s: %s", errJobFailed, id, job.State, job.Error)
 		}
 
 		select {
 		case <-ctx.Done():
-			return nil, fmt.Errorf("waiting for job %d: %w", id, ctx.Err())
+			return fmt.Errorf("waiting for job %d: %w", id, ctx.Err())
 		case <-ticker.C:
 		}
 	}

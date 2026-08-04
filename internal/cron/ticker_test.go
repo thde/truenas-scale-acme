@@ -7,6 +7,8 @@ import (
 )
 
 func TestCronTicker_Stop(t *testing.T) {
+	t.Parallel()
+
 	ticker, _ := NewTicker("@daily")
 	timeoutTimer := time.NewTimer(2 * time.Second)
 
@@ -24,6 +26,8 @@ Outer:
 }
 
 func TestCronTicker_Reset_Error(t *testing.T) {
+	t.Parallel()
+
 	ticker, _ := NewTicker("@daily")
 	defer ticker.Stop()
 	err := ticker.Reset("NOT_VALID_SCHEDULE", time.UTC)
@@ -33,6 +37,8 @@ func TestCronTicker_Reset_Error(t *testing.T) {
 }
 
 func TestCronTicker_Reset(t *testing.T) {
+	t.Parallel()
+
 	ticker, _ := NewTicker("@daily")
 	defer ticker.Stop()
 	err := ticker.Reset("@monthly", time.UTC)
@@ -42,6 +48,8 @@ func TestCronTicker_Reset(t *testing.T) {
 }
 
 func TestNewTicker_Error(t *testing.T) {
+	t.Parallel()
+
 	_, err := NewTicker("NOT_VALID_SCHEDULE")
 	if err == nil {
 		t.Fatal("expected error, received 'nil'")
@@ -49,6 +57,8 @@ func TestNewTicker_Error(t *testing.T) {
 }
 
 func TestCronRunner_MultipleTicks(t *testing.T) {
+	t.Parallel()
+
 	var counter int
 	ticker, _ := NewTicker("*/1 * * * * ?")
 	timeoutTimer := time.NewTimer(5 * time.Second)
@@ -98,9 +108,9 @@ func ExampleTicker_Reset() {
 	<-ticker.C
 	log.Print("It's Sunday!")
 
-	err = ticker.Reset("0 0 0 ? * WED", time.UTC)
-	if err != nil {
-		log.Fatal(err)
+	if err := ticker.Reset("0 0 0 ? * WED", time.UTC); err != nil {
+		log.Print(err)
+		return
 	}
 
 	<-ticker.C

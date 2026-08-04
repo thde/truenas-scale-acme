@@ -1,9 +1,84 @@
 #:schema https://golangci-lint.run/jsonschema/golangci.jsonschema.json
 version = "2"
 
+[linters]
+
+enable = [
+    "revive",
+    "gocritic",
+    "gosec",
+    "bodyclose",
+    "canonicalheader",
+
+    # Error Handling & Bug Prevention
+    "err113",
+    "errname",
+    "wrapcheck",
+    "nilerr",
+    "makezero",
+    "prealloc",
+    "dogsled",
+    "unparam",
+    "staticcheck",
+
+    # Modern Go, Architecture
+    "copyloopvar",
+    "intrange",
+    "sloglint",
+    "loggercheck",
+    "perfsprint",
+    "exhaustive",
+    "exptostd",
+    "nolintlint",
+    "modernize",
+    "promlinter",
+
+    # Testing
+    "paralleltest",
+    "thelper",
+
+    # Context
+    "noctx",
+    "containedctx",
+    "contextcheck",
+
+    # Documentation
+    "godoclint",
+    "godot",
+]
+
+[linters.settings.errcheck]
+check-type-assertions = true
+
+[linters.settings.gocritic]
+enabled-tags = ["diagnostic", "experimental", "opinionated", "performance", "style"]
+
+[linters.settings.gocritic.settings.hugeParam]
+sizeThreshold = 2048
+
+[linters.settings.gocritic.settings.rangeValCopy]
+sizeThreshold = 2048
+
+[linters.settings.exhaustive]
+default-signifies-exhaustive = true
+
+[linters.settings.nolintlint]
+require-explanation = true
+require-specific = true
+
+[linters.settings.godoclint]
+require-doc = true
+
+[linters.settings.godot]
+scope = "toplevel"
+capital = true
+
 [[linters.exclusions.rules]]
 linters = ["errcheck"]
 source = "^\\s*defer\\s+"
 
 [formatters]
 enable = ["gci", "gofmt", "gofumpt", "goimports"]
+
+[formatters.settings.gofumpt]
+extra-rules = true

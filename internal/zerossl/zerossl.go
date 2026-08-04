@@ -5,6 +5,7 @@ package zerossl
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -15,12 +16,19 @@ import (
 	"github.com/mholt/acmez/v3/acme"
 )
 
+var (
+	// ErrEmailRequired is returned when [EABCredentials] is called without an email address.
+	ErrEmailRequired = errors.New("your email address is required to use ZeroSSL's ACME endpoint")
+	// ErrEABCredentials is returned when the ZeroSSL API refuses to issue EAB credentials.
+	ErrEABCredentials = errors.New("failed getting EAB credentials")
+)
+
 // EABCredentials generates ZeroSSL EAB credentials for the primary contact email
 // on the issuer. It should only be used if the CA endpoint is ZeroSSL. An email address is required.
 // https://github.com/caddyserver/caddy/blob/master/modules/caddytls/acmeissuer.go#L269
 func EABCredentials(ctx context.Context, email string, acct acme.Account) (*acme.EAB, acme.Account, error) {
 	if strings.TrimSpace(email) == "" {
-		return nil, acme.Account{}, fmt.Errorf("your email address is required to use ZeroSSL's ACME endpoint")
+		return nil, acme.Account{}, ErrEmailRequired
 	}
 
 	if len(acct.Contact) == 0 {
@@ -34,14 +42,14 @@ func EABCredentials(ctx context.Context, email string, acct acme.Account) (*acme
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, body)
 	if err != nil {
-		return nil, acct, fmt.Errorf("forming request: %v", err)
+		return nil, acct, fmt.Errorf("forming request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("User-Agent", certmagic.UserAgent)
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return nil, acct, fmt.Errorf("performing EAB credentials request: %v", err)
+		return nil, acct, fmt.Errorf("performing EAB credentials request: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -56,15 +64,15 @@ func EABCredentials(ctx context.Context, email string, acct acme.Account) (*acme
 	}
 	err = json.NewDecoder(resp.Body).Decode(&result)
 	if err != nil {
-		return nil, acct, fmt.Errorf("decoding API response: %v", err)
+		return nil, acct, fmt.Errorf("decoding API response: %w", err)
 	}
 	if result.Error.Code != 0 {
 		// do this check first because ZeroSSL's API returns 200 on errors
-		return nil, acct, fmt.Errorf("failed getting EAB credentials: HTTP %d: %s (code %d)",
-			resp.StatusCode, result.Error.Type, result.Error.Code)
+		return nil, acct, fmt.Errorf("%w: HTTP %d: %s (code %d)",
+			ErrEABCredentials, resp.StatusCode, result.Error.Type, result.Error.Code)
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, acct, fmt.Errorf("failed getting EAB credentials: HTTP %d", resp.StatusCode)
+		return nil, acct, fmt.Errorf("%w: HTTP %d", ErrEABCredentials, resp.StatusCode)
 	}
 
 	return &acme.EAB{

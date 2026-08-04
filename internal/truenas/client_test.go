@@ -49,7 +49,7 @@ func TestWithURL(t *testing.T) {
 
 func TestWithTLSConfig(t *testing.T) {
 	t.Parallel()
-	tc := &tls.Config{InsecureSkipVerify: true} //nolint: gosec
+	tc := &tls.Config{InsecureSkipVerify: true} //nolint:gosec // the value is only checked for identity, no connection is made.
 
 	cfg := &config{}
 	WithTLSConfig(tc)(cfg)

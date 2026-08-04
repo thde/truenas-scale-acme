@@ -5,6 +5,7 @@ package cli
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"net/url"
 	"os"
@@ -32,6 +33,9 @@ var (
 const (
 	defaultURL = "ws://localhost/api/current"
 )
+
+// errNoConfig is returned when no configuration file exists at the requested path.
+var errNoConfig = errors.New("no config found")
 
 var (
 	defaultResolvers = []string{
@@ -67,6 +71,7 @@ var (
 	}
 )
 
+// BuildInfo describes the version information the binary was built with.
 type BuildInfo struct {
 	Version   string
 	Commit    string
@@ -86,6 +91,8 @@ type cmd struct {
 	*BuildInfo
 }
 
+// Run parses the command-line flags and executes the command, either once or,
+// in daemon mode, on the configured cron schedule until ctx is cancelled.
 func Run(ctx context.Context, logger *zap.Logger, buildInfo *BuildInfo) error {
 	return cmd{
 		CertLogger:  logger.Named("certificate"),
@@ -121,7 +128,7 @@ func (c cmd) Run(ctx context.Context) error {
 		return fmt.Errorf("failed to load config from %s: %w", *flagConfigPath, err)
 	}
 	if config == nil { // if no config existed
-		return fmt.Errorf("no config found at %s", *flagConfigPath)
+		return fmt.Errorf("%w at %s", errNoConfig, *flagConfigPath)
 	}
 
 	u, err := url.Parse(config.API.URL)
@@ -133,7 +140,8 @@ func (c cmd) Run(ctx context.Context) error {
 		truenas.WithURL(u),
 	}
 	if config.API.SkipVerify {
-		dialOpts = append(dialOpts, truenas.WithTLSConfig(&tls.Config{InsecureSkipVerify: true})) //nolint: gosec
+		//nolint:gosec // skipping verification is what api.skip_verify explicitly opts into.
+		dialOpts = append(dialOpts, truenas.WithTLSConfig(&tls.Config{InsecureSkipVerify: true}))
 	}
 
 	tnClient, err := truenas.Dial(ctx, config.API.APIKey, dialOpts...)
@@ -159,7 +167,7 @@ func (c cmd) Run(ctx context.Context) error {
 		return nil
 	}
 
-	acmeClient.OnEvent = func(ctx context.Context, event string, data map[string]any) error {
+	acmeClient.OnEvent = func(ctx context.Context, event string, _ map[string]any) error {
 		c.CLILogger.Info("ACME event", zap.String("event", event))
 
 		switch event {
@@ -177,7 +185,7 @@ func (c cmd) Run(ctx context.Context) error {
 	defer ticker.Stop()
 
 	for range ticker.C {
-		if err = c.ensureCertificate(ctx, config, acmeClient, tnClient); err != nil {
+		if err := c.ensureCertificate(ctx, config, acmeClient, tnClient); err != nil {
 			return err
 		}
 	}
@@ -217,7 +225,7 @@ func (c cmd) ensureACMECertificate(ctx context.Context, domain string, acmeClien
 func (c cmd) ensureUICertificate(ctx context.Context, client *truenas.Client, currentCert certmagic.Certificate) (*truenas.Certificate, error) {
 	settings, err := client.SystemGeneralConfig(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error reading system configuration: %w", err)
 	}
 
 	if settings.UICertificate == nil {
@@ -226,7 +234,7 @@ func (c cmd) ensureUICertificate(ctx context.Context, client *truenas.Client, cu
 		activeCert := settings.UICertificate
 		activeCertTLS, err := activeCert.TLSCertificate()
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("error parsing active ui certificate %q: %w", activeCert.Name, err)
 		}
 
 		if activeCertTLS.Leaf.Equal(currentCert.Leaf) {
@@ -235,16 +243,16 @@ func (c cmd) ensureUICertificate(ctx context.Context, client *truenas.Client, cu
 		}
 	}
 
-	name := fmt.Sprintf("acme-%s", time.Now().Format("20060102-150405"))
+	name := "acme-" + time.Now().Format("20060102-150405")
 	c.ScaleLogger.Info("importing certificate", zap.String("name", name), zap.Strings("san", currentCert.Leaf.DNSNames))
 	certImport, err := client.CertificateImport(ctx, name, currentCert.Certificate)
 	if err != nil {
-		return settings.UICertificate, err
+		return settings.UICertificate, fmt.Errorf("error importing certificate %q: %w", name, err)
 	}
 
 	err = client.SystemGeneralUpdate(ctx, truenas.SystemGeneralUpdateParams{UICertificate: &certImport.ID})
 	if err != nil {
-		return settings.UICertificate, err
+		return settings.UICertificate, fmt.Errorf("error setting ui certificate to %q: %w", name, err)
 	}
 	c.ScaleLogger.Info("ui certificate updated")
 
@@ -282,8 +290,12 @@ func (c cmd) acmeClient(config ACMEConfig) (*certmagic.Config, error) {
 					return account, nil
 				}
 				credentials, account, err := zerossl.EABCredentials(ctx, config.Email, account)
+				if err != nil {
+					return account, fmt.Errorf("error getting ZeroSSL EAB credentials: %w", err)
+				}
 				issuer.ExternalAccount = credentials
-				return account, err
+
+				return account, nil
 			},
 		}),
 	}
@@ -294,7 +306,7 @@ func (c cmd) acmeClient(config ACMEConfig) (*certmagic.Config, error) {
 func (c cmd) removeExpiredCerts(ctx context.Context, client *truenas.Client, domain string, activeCert *truenas.Certificate) error {
 	certs, err := client.Certificates(ctx)
 	if err != nil {
-		return err
+		return fmt.Errorf("error listing certificates: %w", err)
 	}
 
 	for _, cert := range certs {

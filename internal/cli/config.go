@@ -16,12 +16,31 @@ import (
 	"go.uber.org/zap"
 )
 
+// The configuration holds the TrueNAS API key and the ACME solver credentials,
+// so it is kept accessible to its owner only.
+const (
+	configDirPerm  os.FileMode = 0o700
+	configFilePerm os.FileMode = 0o600
+)
+
+// Validation errors reported by [Config.Valid] and [ACMEConfig.DNSProvider].
+var (
+	errNoSolver         = errors.New("no solver configured")
+	errNoDomain         = errors.New("no domain specified")
+	errNoAPIConfig      = errors.New("no api config specified")
+	errNoAPIKey         = errors.New("no api.api_key specified")
+	errNoACMEEmail      = errors.New("no acme.email specified")
+	errInvalidResolvers = errors.New("invalid acme.resolvers")
+)
+
+// APIConfig describes how to reach the TrueNAS API.
 type APIConfig struct {
 	APIKey     string `json:"api_key"`
 	URL        string `json:"url"`
 	SkipVerify bool   `json:"skip_verify"`
 }
 
+// ACMEConfig holds the ACME account settings and the DNS-01 solver credentials.
 type ACMEConfig struct {
 	Email      string               `json:"email"`
 	TOSAgreed  bool                 `json:"tos_agreed"`
@@ -31,6 +50,8 @@ type ACMEConfig struct {
 	Cloudflare *cloudflare.Provider `json:"cloudflare,omitempty"`
 }
 
+// DNSProvider returns the configured DNS-01 solver. ACME-DNS takes precedence
+// if more than one provider is configured.
 func (ac *ACMEConfig) DNSProvider() (certmagic.DNSProvider, error) {
 	if ac.ACMEDNS != nil {
 		return ac.ACMEDNS, nil
@@ -38,14 +59,16 @@ func (ac *ACMEConfig) DNSProvider() (certmagic.DNSProvider, error) {
 		return ac.Cloudflare, nil
 	}
 
-	return nil, fmt.Errorf("no solver configured")
+	return nil, errNoSolver
 }
 
+// Config is the on-disk configuration of the command.
 type Config struct {
 	Domain string `json:"domain"`
 	// API is the configuration for the TrueNAS JSONRPC 2.0 WebSocket API.
 	API *APIConfig `json:"api"`
 	// Scale is the configuration for the TrueNAS SCALE REST API.
+	//
 	// Deprecated: Use [Config.API] instead.
 	Scale *APIConfig `json:"scale"`
 	ACME  ACMEConfig `json:"acme"`
@@ -75,15 +98,17 @@ func defaultDataDir() string {
 	return filepath.Join(baseDir, "truenas-scale-acme")
 }
 
+// Merge reads a JSON configuration from r and overlays every value it sets onto
+// c, leaving fields absent from r untouched.
 func (c *Config) Merge(r io.Reader) error {
 	data, err := io.ReadAll(r)
 	if err != nil {
-		return err
+		return fmt.Errorf("reading config: %w", err)
 	}
 
 	var cf Config
 	if err := json.Unmarshal(data, &cf); err != nil {
-		return err
+		return fmt.Errorf("parsing config: %w", err)
 	}
 
 	if cf.Domain != "" {
@@ -129,24 +154,31 @@ func (c *Config) Merge(r io.Reader) error {
 	return nil
 }
 
+// Write encodes c as indented JSON to w.
 func (c *Config) Write(w io.Writer) error {
 	enc := json.NewEncoder(w)
 	enc.SetIndent("", "  ")
-	return enc.Encode(c)
+	if err := enc.Encode(c); err != nil {
+		return fmt.Errorf("encoding config: %w", err)
+	}
+
+	return nil
 }
 
+// Valid reports every problem that prevents the configuration from being used,
+// joined into a single error.
 func (c *Config) Valid() error {
 	errs := []error{}
 
 	if c.Domain == "" {
-		errs = append(errs, fmt.Errorf("no domain specified"))
+		errs = append(errs, errNoDomain)
 	}
 
 	if c.API == nil {
-		errs = append(errs, fmt.Errorf("no api config specified"))
+		errs = append(errs, errNoAPIConfig)
 	} else {
 		if c.API.APIKey == "" {
-			errs = append(errs, fmt.Errorf("no api.api_key specified"))
+			errs = append(errs, errNoAPIKey)
 		}
 		if _, err := url.Parse(c.API.URL); err != nil {
 			errs = append(errs, fmt.Errorf("invalid api.url: %w", err))
@@ -155,12 +187,12 @@ func (c *Config) Valid() error {
 
 	for _, resolver := range c.ACME.Resolvers {
 		if ip := net.ParseIP(resolver); ip == nil {
-			errs = append(errs, fmt.Errorf("invalid acme.resolvers: '%s'", resolver))
+			errs = append(errs, fmt.Errorf("%w: '%s'", errInvalidResolvers, resolver))
 		}
 	}
 
 	if c.ACME.Email == "" {
-		errs = append(errs, fmt.Errorf("no acme.email specified"))
+		errs = append(errs, errNoACMEEmail)
 	}
 
 	if _, err := c.ACME.DNSProvider(); err != nil {
@@ -180,24 +212,25 @@ func (c cmd) loadConfig(path string) (*Config, error) {
 	// if the default config is used,
 	// an example config should be written.
 	if path == defaultConfigPath() {
-		err := os.MkdirAll(filepath.Dir(path), os.ModePerm)
+		err := os.MkdirAll(filepath.Dir(path), configDirPerm)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("creating config directory %s: %w", filepath.Dir(path), err)
 		}
 
 		flags = os.O_RDWR | os.O_CREATE
 	}
 
 	c.CLILogger.Info("reading config", zap.String("path", path))
-	configFile, err := os.OpenFile(path, flags, 0o700)
+	//nolint:gosec // the config path is supplied by the operator via -config.
+	configFile, err := os.OpenFile(path, flags, configFilePerm)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("opening config %s: %w", path, err)
 	}
 	defer configFile.Close()
 
 	s, err := configFile.Stat()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("reading config %s: %w", path, err)
 	}
 
 	if s.Size() == 0 && flags != os.O_RDONLY {

@@ -16,9 +16,11 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-const (
-	DefaultURL = "ws://localhost/api/current"
-)
+// DefaultURL is the API endpoint used when no [WithURL] option is given.
+const DefaultURL = "ws://localhost/api/current"
+
+// errInvalidAPIKey is returned when the server rejects the API key.
+var errInvalidAPIKey = errors.New("auth: invalid API key")
 
 type api struct {
 	AuthLoginWithAPIKey  func(ctx context.Context, apiKey string) (bool, error)                                   `rpc_method:"auth.login_with_api_key"`
@@ -108,7 +110,7 @@ func dial(ctx context.Context, apiKey string, opts []Option) (api, jsonrpc.Clien
 	}
 	if !ok {
 		closer()
-		return api{}, nil, errors.New("auth: invalid API key")
+		return api{}, nil, errInvalidAPIKey
 	}
 
 	return a, closer, nil

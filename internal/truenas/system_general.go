@@ -74,7 +74,7 @@ func (c *Client) SystemGeneralUpdate(ctx context.Context, params SystemGeneralUp
 	// to the about-to-restart UI only to be dropped again.
 	select {
 	case <-ctx.Done():
-		return ctx.Err()
+		return fmt.Errorf("waiting for ui restart: %w", ctx.Err())
 	case <-time.After(time.Duration(restartDelay) * time.Second):
 	}
 

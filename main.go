@@ -1,3 +1,5 @@
+// Package main implements the truenas-scale-acme command, which obtains ACME
+// certificates and installs them as the TrueNAS SCALE web UI certificate.
 package main
 
 import (
@@ -21,6 +23,11 @@ var (
 )
 
 func main() {
+	os.Exit(run())
+}
+
+// run holds the program body so deferred cleanup runs before the process exits.
+func run() int {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
@@ -33,8 +40,10 @@ func main() {
 		GoVersion: goVersion,
 	}); err != nil {
 		logger.Error(err.Error())
-		os.Exit(1)
+		return 1
 	}
+
+	return 0
 }
 
 func initLogger(out *os.File) *zap.Logger {

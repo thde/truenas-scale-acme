@@ -77,7 +77,7 @@ func newTicker(schedule string, loc *time.Location, c chan time.Time, k <-chan b
 	scheduleWithTZ := fmt.Sprintf("TZ=%s %s", loc.String(), schedule)
 	cronSchedule, err := scheduleParser.Parse(scheduleWithTZ)
 	if err != nil {
-		return err
+		return fmt.Errorf("parsing cron schedule %q: %w", scheduleWithTZ, err)
 	}
 
 	go cronRunner(cronSchedule, loc, c, k)

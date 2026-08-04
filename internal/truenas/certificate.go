@@ -5,9 +5,14 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"strings"
 )
+
+// errCertificateNotFound is returned when a certificate cannot be located after
+// the import job reported success.
+var errCertificateNotFound = errors.New("certificate not found after import")
 
 // Certificate represents a TrueNAS certificate entry.
 type Certificate struct {
@@ -26,16 +31,16 @@ type Certificate struct {
 func (c *Certificate) TLSCertificate() (tls.Certificate, error) {
 	cert, err := tls.X509KeyPair([]byte(c.Certificate), []byte(c.Privatekey))
 	if err != nil {
-		return cert, err
+		return cert, fmt.Errorf("parsing certificate key pair: %w", err)
 	}
 
 	leaf, err := x509.ParseCertificate(cert.Certificate[0])
 	if err != nil {
-		return cert, err
+		return cert, fmt.Errorf("parsing leaf certificate: %w", err)
 	}
 
 	cert.Leaf = leaf
-	return cert, err
+	return cert, nil
 }
 
 // CertificateCreateParams holds parameters for creating/importing a certificate.
@@ -82,7 +87,7 @@ func (c *Client) CertificateImport(ctx context.Context, name string, cert tls.Ce
 	if err != nil {
 		return nil, err
 	}
-	if _, err := c.waitForJob(ctx, jobID); err != nil {
+	if err := c.waitForJob(ctx, jobID); err != nil {
 		return nil, err
 	}
 
@@ -97,7 +102,7 @@ func (c *Client) CertificateImport(ctx context.Context, name string, cert tls.Ce
 			return &certs[i], nil
 		}
 	}
-	return nil, fmt.Errorf("certificate %q not found after import", name)
+	return nil, fmt.Errorf("%w: %q", errCertificateNotFound, name)
 }
 
 // CertificateDelete deletes a certificate by ID.
@@ -112,8 +117,8 @@ func (c *Client) CertificateDelete(ctx context.Context, id int) error {
 	if err != nil {
 		return err
 	}
-	_, err = c.waitForJob(ctx, jobID)
-	return err
+
+	return c.waitForJob(ctx, jobID)
 }
 
 func encodeChainPEM(cert tls.Certificate) string {
@@ -131,7 +136,7 @@ func encodeChainPEM(cert tls.Certificate) string {
 func encodePrivateKeyPEM(cert tls.Certificate) (string, error) {
 	key, err := x509.MarshalPKCS8PrivateKey(cert.PrivateKey)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("marshaling private key: %w", err)
 	}
 
 	block := pem.EncodeToMemory(&pem.Block{

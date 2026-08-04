@@ -13,10 +13,11 @@ const timeLayout = "Mon Jan _2 15:04:05 2006"
 // Time is a [time.Time] that can unmarshal TrueNAS date strings.
 type Time struct{ time.Time }
 
+// UnmarshalJSON decodes a TrueNAS date string into t.
 func (t *Time) UnmarshalJSON(b []byte) error {
 	var s string
 	if err := json.Unmarshal(b, &s); err != nil {
-		return err
+		return fmt.Errorf("cannot unmarshal %s as a TrueNAS time: %w", b, err)
 	}
 	parsed, err := time.Parse(timeLayout, s)
 	if err != nil {
