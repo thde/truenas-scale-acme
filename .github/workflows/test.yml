@@ -22,12 +22,6 @@ jobs:
       - uses: actions/setup-go@v7
         with:
           go-version: stable
-      - uses: actions/cache@v6
-        with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
       - run: go mod download -x
       - run: go test -v ./... -race -bench=. -benchmem -cover -coverprofile cover.out 2>&1 | tee test.out
       - run: go tool cover -func cover.out
@@ -40,12 +34,6 @@ jobs:
       - uses: actions/setup-go@v7
         with:
           go-version: stable
-      - uses: actions/cache@v6
-        with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
       - run: go mod download -x
       - run: go vet ./...
       - uses: dominikh/staticcheck-action@v1
@@ -57,5 +45,10 @@ jobs:
       - uses: golang/govulncheck-action@v1
         with:
           repo-checkout: false
-          go-version: stable
-      - run: go run golang.org/x/tools/gopls/internal/analysis/modernize/cmd/modernize@latest -fix -test -diff ./...
+      - run: go fix -diff ./... | awk '{print} /\S/ {found=1} END {if (found) exit 1}'
+  spell-check:
+    name: spell-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: crate-ci/typos@v1.48.0

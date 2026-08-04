@@ -27,12 +27,6 @@ jobs:
       - uses: actions/setup-go@v7
         with:
           go-version: stable
-      - uses: actions/cache@v6
-        with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
       - run: go mod download -x
       - name: Define goreleaser flags
         run: test -n "$(git tag --points-at HEAD)" || echo "GORELEASER_FLAGS=--snapshot" >> $GITHUB_ENV
