@@ -171,8 +171,7 @@ func (c *Client) withReconnect(ctx context.Context, f func() error) error {
 	if err == nil {
 		return nil
 	}
-	var clientErr *jsonrpc.ErrClient
-	if !errors.As(err, &clientErr) {
+	if _, ok := errors.AsType[*jsonrpc.ErrClient](err); !ok {
 		return err
 	}
 

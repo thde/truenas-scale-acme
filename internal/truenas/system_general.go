@@ -85,8 +85,7 @@ func (c *Client) SystemGeneralUpdate(ctx context.Context, params SystemGeneralUp
 	// Confirm the change. A transient drop right after reconnect can occur, so
 	// reconnect once more and retry on a connection error.
 	if err := c.a.SystemGeneralCheckin(ctx); err != nil {
-		var connErr *jsonrpc.RPCConnectionError
-		if !errors.As(err, &connErr) {
+		if _, ok := errors.AsType[*jsonrpc.RPCConnectionError](err); !ok {
 			return fmt.Errorf("system.general.checkin: %w", err)
 		}
 		if rerr := c.reconnectWithBackoff(ctx); rerr != nil {
