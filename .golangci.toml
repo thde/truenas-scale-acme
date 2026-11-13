@@ -81,4 +81,5 @@ source = "^\\s*defer\\s+"
 enable = ["gci", "gofmt", "gofumpt", "goimports"]
 
 [formatters.settings.gofumpt]
-extra-rules = true
+extra.group-params = true
+extra.clothe-returns = true
